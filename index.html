@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>N5 단어 읽어주기</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#faf8f5;--fg:#222;--card:#fff;--mut:#777;--ac:#c0392b;--bd:#e3ded6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#181818;--fg:#eee;--card:#242424;--mut:#999;--ac:#e8806f;--bd:#3a3a3a}}
+:root[data-theme="dark"]{--bg:#181818;--fg:#eee;--card:#242424;--mut:#999;--ac:#e8806f;--bd:#3a3a3a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{position:relative;margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Noto Sans KR","Noto Sans JP",sans-serif;padding:16px;max-width:520px;margin:0 auto}
+#tabs{display:flex;align-items:flex-end;gap:2px;margin:10px 0 0;padding:0 4px;border-bottom:1px solid var(--bd)}
+.tab{border:1px solid var(--bd);border-bottom:none;border-radius:10px 10px 0 0;padding:9px 16px;font-size:14px;color:var(--mut);cursor:pointer;white-space:nowrap;user-select:none}
+.tab.on{background:var(--card);color:var(--fg);font-weight:700;position:relative;top:1px;border-bottom:1px solid var(--card)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:28px 16px;text-align:center}
+#jp{font-size:44px;font-weight:700}
+#rd{font-size:18px;color:var(--mut);margin-top:6px;min-height:1.5em;line-height:1.5em}
+#ko{font-size:24px;margin-top:14px;color:#27ae60}
+#cnt{font-size:13px;color:var(--mut);margin-top:14px}
+.row{display:flex;gap:8px;margin-top:12px}
+button{flex:1;padding:14px 8px;font-size:16px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+button.p{background:#27ae60;color:#fff;border:none;font-weight:700}
+.row button{display:flex;align-items:center;justify-content:center;gap:6px;height:52px;padding:0 6px;font-size:14px;white-space:nowrap}
+button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+label{display:block;font-size:13px;color:var(--mut);margin-top:14px}
+input[type=range]{width:100%;accent-color:#27ae60}
+#msg{font-size:13px;color:var(--mut);margin-top:10px}
+#gear{position:absolute;top:24px;right:16px;z-index:41;width:40px;height:40px;padding:0;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px}
+#setp{position:absolute;top:70px;right:16px;z-index:40;width:min(300px,calc(100% - 32px));box-sizing:border-box;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px 18px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#setp[hidden]{display:none}
+#lbox{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;z-index:35;flex-direction:column;align-items:flex-end;gap:8px}
+#lbox #ltop,#lbox #lbot{align-self:flex-start}
+#lbox button{flex:none;height:44px;padding:0 16px;border-radius:22px;display:flex;align-items:center;gap:6px;background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:14px;white-space:nowrap}
+#setx{flex:none;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px}
+#list{margin-top:14px;background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+#list[hidden]{display:none}
+.it{padding:12px 14px;border-bottom:1px solid var(--bd);font-size:15px}
+.it:last-child{border-bottom:none}
+.it.pl{background:rgba(22,101,52,.4)}
+.pos{display:inline-block;font-size:12px;padding:2px 8px;border-radius:10px;margin-left:8px;white-space:nowrap;font-weight:600}
+.pos:empty{display:none}
+.pv{background:rgba(42,125,225,.15);color:#2a7de1}
+.pa{background:rgba(230,126,34,.15);color:#e67e22}
+.pn{background:rgba(39,174,96,.15);color:#27ae60}
+.pb{background:rgba(155,89,182,.15);color:#9b59b6}
+.po{background:rgba(128,128,128,.18);color:var(--mut)}
+</style>
+</head>
+<body>
+<button id="gear" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0-6 0"/></svg></button>
+<div id="tabs" role="tablist"></div>
+<div style="height:12px"></div>
+<div id="vinfo" style="font-size:12px;color:var(--mut);margin:0 0 8px"></div>
+<div class="card">
+  <div id="jp">—</div>
+  <div id="rd"></div>
+  <div style="margin-top:8px"><span id="pos" class="pos" style="margin-left:0"></span></div>
+  <div id="ko"></div>
+  <div id="cnt"></div>
+  <div style="margin-top:10px"><button id="say" aria-label="한 번 듣기" style="flex:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:14px;width:auto"></button></div>
+</div>
+<div class="row">
+  <button id="prev" aria-label="이전"></button>
+  <button id="play" class="p" aria-label="자동 재생"></button>
+  <button id="next" aria-label="다음"></button>
+</div>
+<div class="row">
+  <button id="shuf" aria-label="섞기"></button>
+  <button id="lst" aria-label="단어 목록"></button>
+</div>
+<div id="list" hidden></div>
+<label>단어 수 (1~<span id="mx">44</span>)
+  <input type="number" id="num" min="1" max="44" value="20" inputmode="numeric" style="width:100%;box-sizing:border-box;padding:12px;font-size:16px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg)">
+</label>
+<div id="setp" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px"><span>설정</span><button id="setx" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg></button></div>
+  <label>음량 <span id="vv">100%</span>
+    <input type="range" id="vol" min="0" max="1" step="0.1" value="1">
+  </label>
+  <label>속도 <span id="rv">0.8</span>
+    <input type="range" id="rate" min="0.5" max="1.2" step="0.1" value="0.8">
+  </label>
+  <label style="display:flex;align-items:center;gap:8px;color:var(--fg);font-size:14px;margin-top:16px"><input type="checkbox" id="kk" checked style="width:20px;height:20px;accent-color:#27ae60">한국어 뜻 듣기</label>
+</div>
+<label style="display:flex;align-items:center;gap:8px;color:var(--fg);font-size:14px"><input type="checkbox" id="ax" style="width:20px;height:20px;accent-color:#27ae60">한 번 들은 단어 빼기</label>
+<div id="msg"></div>
+<div id="lbox" style="display:none"><button id="ltop" aria-label="맨 위로"></button><button id="lbot" aria-label="맨 아래로"></button><button id="lclose" aria-label="목록 닫기"></button></div>
+
+<script>
+var W=[
+["私","わたし","나"],["あなた","あなた","당신"],["先生","せんせい","선생님"],["学生","がくせい","학생"],
+["友達","ともだち","친구"],["家族","かぞく","가족"],["水","みず","물"],["お茶","おちゃ","차"],
+["ご飯","ごはん","밥"],["魚","さかな","생선"],["肉","にく","고기"],["野菜","やさい","채소"],
+["果物","くだもの","과일"],["本","ほん","책"],["学校","がっこう","학교"],["会社","かいしゃ","회사"],
+["電車","でんしゃ","전철"],["駅","えき","역"],["今日","きょう","오늘"],["明日","あした","내일"],
+["昨日","きのう","어제"],["毎日","まいにち","매일"],["朝","あさ","아침"],["夜","よる","밤"],
+["食べる","たべる","먹다"],["飲む","のむ","마시다"],["見る","みる","보다"],["行く","いく","가다"],
+["来る","くる","오다"],["読む","よむ","읽다"],["書く","かく","쓰다"],["聞く","きく","듣다 / 묻다"],
+["話す","はなす","말하다"],["大きい","おおきい","크다"],["小さい","ちいさい","작다"],["新しい","あたらしい","새롭다"],
+["古い","ふるい","낡다 / 오래되다"],["高い","たかい","높다 / 비싸다"],["安い","やすい","싸다"],["暑い","あつい","덥다"],
+["寒い","さむい","춥다"],["好き","すき","좋아하다"],["天気","てんき","날씨"],["電話","でんわ","전화"],
+["父","ちち","아버지"],["母","はは","어머니"],["兄","あに","형 / 오빠"],["姉","あね","누나 / 언니"],
+["弟","おとうと","남동생"],["妹","いもうと","여동생"],["犬","いぬ","개"],["猫","ねこ","고양이"],
+["山","やま","산"],["川","かわ","강"],["海","うみ","바다"],["雨","あめ","비"],
+["雪","ゆき","눈"],["花","はな","꽃"],["木","き","나무"],["車","くるま","자동차"],
+["自転車","じてんしゃ","자전거"],["病院","びょういん","병원"],["銀行","ぎんこう","은행"],["郵便局","ゆうびんきょく","우체국"],
+["店","みせ","가게"],["部屋","へや","방"],["家","いえ","집"],["窓","まど","창문"],
+["時計","とけい","시계"],["傘","かさ","우산"],["靴","くつ","신발"],["服","ふく","옷"],
+["名前","なまえ","이름"],["時間","じかん","시간"],["今","いま","지금"],["午前","ごぜん","오전"],
+["午後","ごご","오후"],["休み","やすみ","휴일"],["仕事","しごと","일"],["勉強","べんきょう","공부"],
+["映画","えいが","영화"],["音楽","おんがく","음악"],["写真","しゃしん","사진"],["手","て","손"],
+["顔","かお","얼굴"],["口","くち","입"],["耳","みみ","귀"],["足","あし","발 / 다리"],
+["買う","かう","사다"],["売る","うる","팔다"],["待つ","まつ","기다리다"],["持つ","もつ","가지다"],
+["立つ","たつ","서다"],["座る","すわる","앉다"],["歩く","あるく","걷다"],["走る","はしる","달리다"],
+["寝る","ねる","자다"],["起きる","おきる","일어나다"],["会う","あう","만나다"],["休む","やすむ","쉬다"],
+["教える","おしえる","가르치다"],["習う","ならう","배우다"]
+];
+(function(){W.length=0;var seen={};
+"私|わたし|나;あなた|あなた|당신;先生|せんせい|선생님;学生|がくせい|학생;友達|ともだち|친구;家族|かぞく|가족;水|みず|물;お茶|おちゃ|차;御飯|ごはん|밥;魚|さかな|물고기;肉|にく|고기;野菜|やさい|야채;果物|くだもの|과일;本|ほん|책;学校|がっこう|학교;会社|かいしゃ|회사;電車|でんしゃ|전철;駅|えき|역;今日|きょう|오늘;明日|あした|내일;昨日|きのう|어제;毎日|まいにち|매일;朝|あさ|아침;夜|よる|밤;食べる|たべる|먹다;飲む|のむ|마시다;見る|みる|보다;行く|いく|가다;来る|くる|오다;読む|よむ|읽다;書く|かく|쓰다;聞く|きく|듣다;話す|はなす|말하다;大きい|おおきい|크다;小さい|ちいさい|작다;新しい|あたらしい|새롭다;古い|ふるい|낡다;高い|たかい|높다;安い|やすい|싸다;暑い|あつい|덥다;寒い|さむい|춥다;好き|すき|좋아하다;天気|てんき|날씨;電話|でんわ|전화;父|ちち|아버지;母|はは|어머니;兄|あに|형;姉|あね|누나;弟|おとうと|남동생;妹|いもうと|여동생;犬|いぬ|개;猫|ねこ|고양이;山|やま|산;川|かわ|강;海|うみ|바다;雨|あめ|비;雪|ゆき|눈;花|はな|꽃;木|き|나무;車|くるま|자동차;自転車|じてんしゃ|자전거;病院|びょういん|병원;銀行|ぎんこう|은행;郵便局|ゆうびんきょく|우체국;店|みせ|가게;部屋|へや|방;家|いえ|집;窓|まど|창문;時計|とけい|시계;傘|かさ|우산;靴|くつ|신발;服|ふく|옷;名前|なまえ|이름;時間|じかん|시간;今|いま|지금;午前|ごぜん|오전;午後|ごご|오후;休み|やすみ|휴일;仕事|しごと|일;勉強|べんきょう|공부;映画|えいが|영화;音楽|おんがく|음악;写真|しゃしん|사진;手|て|손;顔|かお|얼굴;口|くち|입;耳|みみ|귀;足|あし|발;買う|かう|사다;売る|うる|팔다;待つ|まつ|기다리다;持つ|もつ|갖다;立つ|たつ|서다;座る|すわる|앉다;歩く|あるく|걷다;走る|はしる|달리다;寝る|ねる|자다;起きる|おきる|일어나다;会う|あう|만나다;休む|やすむ|쉬다;教える|おしえる|가르치다;習う|ならう|배우다;椅子|いす|의자;意味|いみ|의미;入口|いりぐち|입구;映画館|えいがかん|영화관;英語|えいご|영어;鉛筆|えんぴつ|연필;外国|がいこく|외국;外国人|がいこくじん|외국인;階段|かいだん|계단;家庭|かてい|가정;火曜日|かようび|화요일;漢字|かんじ|한자;黄色|きいろ|노란색;牛乳|ぎゅうにゅう|우유;教室|きょうしつ|교실;兄弟|きょうだい|형제;金曜日|きんようび|금요일;結婚|けっこん|결혼;月曜日|げつようび|월요일;玄関|げんかん|현관;公園|こうえん|공원;紅茶|こうちゃ|홍차;作文|さくぶん|작문;雑誌|ざっし|잡지;質問|しつもん|질문;自動車|じどうしゃ|자동차;授業|じゅぎょう|수업;宿題|しゅくだい|숙제;食堂|しょくどう|식당;新聞|しんぶん|신문;水曜日|すいようび|수요일;洗濯|せんたく|세탁;大学|だいがく|대학;大使館|たいしかん|대사관;建物|たてもの|건물;地下鉄|ちかてつ|지하철;地図|ちず|지도;出口|でぐち|출구;電気|でんき|전기;動物|どうぶつ|동물;図書館|としょかん|도서관;土曜日|どようび|토요일;日曜日|にちようび|일요일;葉書|はがき|엽서;番号|ばんごう|번호;飛行機|ひこうき|비행기;文章|ぶんしょう|문장;便利|べんり|편리;帽子|ぼうし|모자;毎月|まいげつ|매월;毎週|まいしゅう|매주;毎年|まいねん|매년;万年筆|まんねんひつ|만년필;眼鏡|めがね|안경;木曜日|もくようび|목요일;問題|もんだい|문제;有名|ゆうめい|유명;来年|らいねん|내년;留学生|りゅうがくせい|유학생;料理|りょうり|요리;旅行|りょこう|여행;冷蔵庫|れいぞうこ|냉장고;練習|れんしゅう|연습;青|あお|파랑;赤|あか|빨강;赤い|あかい|빨갛다;明るい|あかるい|밝다;秋|あき|가을;開ける|あける|열다;上げる|あげる|올리다;朝御飯|あさごはん|아침밥;明後日|あさって|모레;遊ぶ|あそぶ|놀다;暖かい|あたたかい|따뜻하다;頭|あたま|머리;熱い|あつい|뜨겁다;厚い|あつい|두껍다;後|あと|나중;洗う|あらう|씻다;有る|ある|있다;危ない|あぶない|위험하다;甘い|あまい|달다;言う|いう|말하다;池|いけ|연못;医者|いしゃ|의사;忙しい|いそがしい|바쁘다;痛い|いたい|아프다;一|いち|일;一番|いちばん|가장;いつ|いつ|언제;色|いろ|색;上|うえ|위;後ろ|うしろ|뒤;歌|うた|노래;歌う|うたう|노래하다;生まれる|うまれる|태어나다;うるさい|うるさい|시끄럽다;絵|え|그림;美味しい|おいしい|맛있다;多い|おおい|많다;お菓子|おかし|과자;お金|おかね|돈;置く|おく|놓다;お酒|おさけ|술;お皿|おさら|접시;押す|おす|누르다;遅い|おそい|늦다;お手洗い|おてあらい|화장실;男|おとこ|남자;女|おんな|여자;大人|おとな|어른;お腹|おなか|배;同じ|おなじ|같다;お風呂|おふろ|목욕;お弁当|おべんとう|도시락;覚える|おぼえる|외우다;重い|おもい|무겁다;面白い|おもしろい|재미있다;泳ぐ|およぐ|헤엄치다;終わる|おわる|끝나다;帰る|かえる|돌아가다;鍵|かぎ|열쇠;貸す|かす|빌려주다;借りる|かりる|빌리다;風邪|かぜ|감기;紙|かみ|종이;辛い|からい|맵다;体|からだ|몸;軽い|かるい|가볍다;可愛い|かわいい|귀엽다;消える|きえる|사라지다;北|きた|북쪽;汚い|きたない|더럽다;切手|きって|우표;切符|きっぷ|표;去年|きょねん|작년;嫌い|きらい|싫어하다;切る|きる|자르다;着る|きる|입다;綺麗|きれい|예쁘다;薬|くすり|약;下さい|ください|주세요;靴下|くつした|양말;国|くに|나라;暗い|くらい|어둡다;黒い|くろい|검다;元気|げんき|건강;声|こえ|목소리;今年|ことし|올해;言葉|ことば|말;子供|こども|아이;困る|こまる|곤란하다;財布|さいふ|지갑;砂糖|さとう|설탕;散歩|さんぽ|산책;塩|しお|소금;辞書|じしょ|사전;静か|しずか|조용하다;下|した|아래;死ぬ|しぬ|죽다;自分|じぶん|자신;閉める|しめる|닫다;上手|じょうず|잘하다;丈夫|じょうぶ|튼튼하다;醤油|しょうゆ|간장;知る|しる|알다;白い|しろい|하얗다;少ない|すくない|적다;少し|すこし|조금;涼しい|すずしい|시원하다;住む|すむ|살다;背|せい|키;生徒|せいと|학생;セーター|セーター|스웨터;石鹸|せっけん|비누;背広|せびろ|신사복;狭い|せまい|좁다;ゼロ|ゼロ|제로;千|せん|천;先月|せんげつ|지난달;先週|せんしゅう|지난주;全部|ぜんぶ|전부;そう|そう|그렇다;掃除|そうじ|청소;そこ|そこ|거기;そちら|そちら|그쪽;そっち|そっち|그쪽;外|そと|밖;その|その|그;そば|そば|옆;空|そら|하늘;それ|それ|그것;それでは|それでは|그럼;～台|だい|~대;大丈夫|だいじょうぶ|괜찮다;大好き|だいすき|아주 좋아하다;大切|たいせつ|소중하다;台所|だいどころ|부엌;大変|たいへん|힘들다;沢山|たくさん|많이;タクシー|タクシー|택시;出す|だす|꺼내다;～たち|たち|~들;たて|たて|세로;楽しい|たのしい|즐겁다;頼む|たのむ|부탁하다;たばこ|たばこ|담배;多分|たぶん|아마;食べ物|たべもの|음식;卵|たまご|계란;誰|だれ|누구;誕生日|たんじょうび|생일;段々|だんだん|점점;小さな|ちいさな|작은;近い|ちかい|가깝다;違う|ちがう|다르다;近く|ちかく|근처;茶色|ちゃいろ|갈색;茶碗|ちゃわん|밥그릇;～中|ちゅう|~중;丁度|ちょうど|꼭;ちょっと|ちょっと|조금;一日|ついたち|1일;使う|つかう|사용하다;疲れる|つかれる|피곤하다;次|つぎ|다음;着く|つく|도착하다;机|つくえ|책상;作る|つくる|만들다;つける|つける|붙이다;勤める|つとめる|근무하다;つまらない|つまらない|지루하다;冷たい|つめたい|차갑다;強い|つよい|강하다;テープ|テープ|테이프;テーブル|テーブル|테이블;出かける|でかける|외출하다;手紙|てがみ|편지;できる|できる|할 수 있다;テスト|テスト|시험;では|では|그럼;デパート|デパート|백화점;出る|でる|나가다;テレビ|テレビ|텔레비전;戸|と|문;～度|ど|~도;ドア|ドア|문;トイレ|トイレ|화장실;どう|どう|어떻게;どうぞ|どうぞ|부디;どうも|どうも|고맙습니다;十|とお|열 개;遠い|とおい|멀다;～時|とき|~때;時々|ときどき|때때로;どこ|どこ|어디;所|ところ|장소;年|とし|해;どちら|どちら|어느 쪽;どっち|どっち|어느 쪽;どなた|どなた|어느 분;隣|となり|이웃;どの|どの|어느;飛ぶ|とぶ|날다;止まる|とまる|멈추다;鳥|とり|새;鶏肉|とりにく|닭고기;取る|とる|잡다;撮る|とる|찍다;どれ|どれ|어느 것;ない|ない|없다;ナイフ|ナイフ|칼;中|なか|안;長い|ながい|길다;鳴く|なく|울다;無くす|なくす|잃어버리다;なぜ|なぜ|왜;夏|なつ|여름;夏休み|なつやすみ|여름방학;七つ|ななつ|일곱 개;何|なん|무엇;並ぶ|ならぶ|줄서다;並べる|ならべる|늘어놓다;何～|なん|무슨~;二|に|이;にぎやか|にぎやか|활기차다;西|にし|서쪽;～日|にち|~일;荷物|にもつ|짐;ニュース|ニュース|뉴스;庭|にわ|정원;～人|にん|~명;脱ぐ|ぬぐ|벗다;温い|ぬるい|미지근하다;ネクタイ|ネクタイ|넥타이;～年|ねん|~년;ノート|ノート|공책;登る|のぼる|오르다;飲み物|のみもの|음료;乗る|のる|타다;歯|は|이;パーティー|パーティー|파티;はい|はい|네;～杯|はい|~잔;灰皿|はいざら|재떨이;入る|はいる|들어가다;はく|はく|신다;箱|はこ|상자;橋|はし|다리;箸|はし|젓가락;始まる|はじまる|시작되다;初め|はじめ|처음;初めて|はじめて|처음으로;バス|バス|버스;バター|バター|버터;二十歳|はたち|스무 살;働く|はたらく|일하다;八|はち|팔;鼻|はな|코;話|はなし|이야기;早い|はやい|이르다;速い|はやい|빠르다;春|はる|봄;貼る|はる|붙이다;晴れ|はれ|맑음;晴れる|はれる|맑아지다;半|はん|반;晩|ばん|저녁;～番|ばん|~번;パン|パン|빵;ハンカチ|ハンカチ|손수건;晩御飯|ばんごはん|저녁밥;半分|はんぶん|절반;東|ひがし|동쪽;～匹|ひき|~마리;引く|ひく|당기다;弾く|ひく|연주하다;低い|ひくい|낮다;左|ひだり|왼쪽;人|ひと|사람;一つ|ひとつ|한 개;一月|ひとつき|한 달;一人|ひとり|혼자;暇|ひま|한가하다;百|ひゃく|백;病気|びょうき|병;平仮名|ひらがな|히라가나;昼|ひる|낮;昼御飯|ひるごはん|점심밥;広い|ひろい|넓다;フィルム|フィルム|필름;封筒|ふうとう|봉투;プール|プール|수영장;フォーク|フォーク|포크;吹く|ふく|불다;二つ|ふたつ|두 개;豚肉|ぶたにく|돼지고기;二人|ふたり|두 사람;二日|ふつか|2일;太い|ふとい|굵다;冬|ふゆ|겨울;降る|ふる|내리다;～分|ふん|~분;ページ|ページ|페이지;下手|へた|서투르다;ベッド|ベッド|침대;ペット|ペット|애완동물;辺|へん|근처;ペン|ペン|펜;ボールペン|ボールペン|볼펜;外|ほか|다른 것;ポケット|ポケット|주머니;欲しい|ほしい|갖고 싶다;ポスト|ポスト|우체통;細い|ほそい|가늘다;ボタン|ボタン|단추;ホテル|ホテル|호텔;～本|ほん|~개비;本棚|ほんだな|책장;本当|ほんとう|진짜;～枚|まい|~장;毎朝|まいあさ|매일 아침;毎晩|まいばん|매일 밤;前|まえ|앞;曲る|まがる|구부러지다;まずい|まずい|맛없다;また|また|또;町|まち|마을;まっすぐ|まっすぐ|똑바로;マッチ|マッチ|성냥;丸い|まるい|둥글다;万|まん|만;磨く|みがく|닦다;右|みぎ|오른쪽;短い|みじかい|짧다;見せる|みせる|보여주다;道|みち|길;三つ|みっつ|세 개;緑|みどり|초록;皆さん|みなさん|여러분;南|みなみ|남쪽;みんな|みんな|모두;六日|むいか|6일;向こう|むこう|건너편;難しい|むずかしい|어렵다;六つ|むっつ|여섯 개;村|むら|마을;目|め|눈;メートル|メートル|미터;もしもし|もしもし|여보세요;もっと|もっと|더;物|もの|물건;門|もん|문;～屋|や|~가게;八百屋|やおや|채소가게;易しい|やさしい|쉽다;八つ|やっつ|여덟 개;やる|やる|하다;夕方|ゆうがた|저녁때;夕飯|ゆうはん|저녁식사;昨夜|ゆうべ|어젯밤;ゆっくりと|ゆっくりと|천천히;洋服|ようふく|양복;よく|よく|잘;横|よこ|옆;四日|よっか|4일;四つ|よっつ|네 개;呼ぶ|よぶ|부르다;弱い|よわい|약하다;来月|らいげつ|다음 달;来週|らいしゅう|다음 주;ラジオ|ラジオ|라디오;ラジオカセット|ラジオカセット|라디오 카세트;りっぱ|りっぱ|훌륭하다;両親|りょうしん|부모님;零|れい|영;レコード|レコード|레코드;レストラン|レストラン|레스토랑;廊下|ろうか|복도;六|ろく|육;ワイシャツ|ワイシャツ|와이셔츠;若い|わかい|젊다;分かる|わかる|알다;忘れる|わすれる|잊다;私|わたくし|저;渡す|わたす|건네주다;渡る|わたる|건너다;悪い|わるい|나쁘다;すぐ|すぐ|곧;ゆっくり|ゆっくり|천천히;～時間|じかん|~시간;～週間|しゅうかん|~주간;十日|とおか|10일;七日|なのか|7일;二十日|はつか|20일;三日|みっか|3일;八日|ようか|8일;青い|あおい|파랗다;開く|あく|열리다;あそこ|あそこ|저기;あちら|あちら|저쪽;あっち|あっち|저쪽;アパート|アパート|아파트;あの|あの|저;浴びる|あびる|끼얹다;飴|あめ|사탕;在る|ある|존재하다;あれ|あれ|저것;いい|いい|좋다;いいえ|いいえ|아니요;いかが|いかが|어떠세요;いくつ|いくつ|몇 개;いくら|いくら|얼마;一日|いちにち|하루;五日|いつか|5일;五つ|いつつ|다섯 개;嫌|いや|싫다;居る|いる|있다;要る|いる|필요하다;入れる|いれる|넣다;色々|いろいろ|여러 가지;薄い|うすい|얇다;うち|うち|우리 집;上着|うわぎ|겉옷;ええ|ええ|네;エレベーター|エレベーター|엘리베이터;～円|えん|~엔;大きな|おおきな|큰;大勢|おおぜい|많은 사람;お母さん|おかあさん|어머니;奥さん|おくさん|부인;おじさん|おじさん|아저씨;おじいさん|おじいさん|할아버지;お父さん|おとうさん|아버지;男の子|おとこのこ|소년;一昨日|おととい|그저께;おととし|おととし|재작년;お兄さん|おにいさん|형;お姉さん|おねえさん|누나;おばさん|おばさん|아주머니;おばあさん|おばあさん|할머니;おまわりさん|おまわりさん|경찰관;降りる|おりる|내리다;女の子|おんなのこ|소녀;～回|かい|~회;～階|かい|~층;買い物|かいもの|쇼핑;返す|かえす|돌려주다;かかる|かかる|걸리다;～か月|かげつ|~개월;掛ける|かける|걸다;かける|かける|전화를 걸다;風|かぜ|바람;方|かた|분;片仮名|かたかな|가타카나;～月|がつ|~월;カップ|カップ|컵;角|かど|모퉁이;かばん|かばん|가방;花瓶|かびん|꽃병;かぶる|かぶる|쓰다;カメラ|カメラ|카메라;カレー|カレー|카레;カレンダー|カレンダー|달력;～側|がわ|~쪽;黄色い|きいろい|노랗다;ギター|ギター|기타;喫茶店|きっさてん|찻집;九|きゅう|구;牛肉|ぎゅうにく|쇠고기;キログラム|キロ|킬로그램;キロメートル|キロ|킬로미터;九|く|구;曇り|くもり|흐림;曇る|くもる|흐리다;クラス|クラス|반;グラム|グラム|그램;黒|くろ|검정;警官|けいかん|경찰관;今朝|けさ|오늘 아침;消す|けす|끄다;結構|けっこう|괜찮다;～個|こ|~개;五|ご|오;～語|ご|~어;交差点|こうさてん|교차로;交番|こうばん|파출소;コート|コート|코트;コーヒー|コーヒー|커피;ここ|ここ|여기;九日|ここのか|9일;九つ|ここのつ|아홉 개;答える|こたえる|대답하다;こちら|こちら|이쪽;こっち|こっち|이쪽;コップ|コップ|컵;この|この|이;コピーする|コピーする|복사하다;これ|これ|이것;今月|こんげつ|이번 달;今週|こんしゅう|이번 주;こんな|こんな|이런;今晩|こんばん|오늘 밤;さあ|さあ|자;～歳|さい|~살;先|さき|앞;咲く|さく|피다;差す|さす|우산을 쓰다;～冊|さつ|~권;さ来年|さらいねん|내후년;～さん|さん|~씨;三|さん|삼;四|し|사;～時|じ|~시;七|しち|칠;字引|じびき|사전;閉まる|しまる|닫히다;締める|しめる|조이다;シャツ|シャツ|셔츠;シャワー|シャワー|샤워;十|じゅう|십;白|しろ|흰색;～人|じん|~사람;吸う|すう|피우다;スカート|スカート|치마;すぐに|すぐに|바로;ストーブ|ストーブ|난로;スプーン|スプーン|숟가락;スポーツ|スポーツ|스포츠;ズボン|ズボン|바지;する|する|하다".split(";").forEach(function(s){var p=s.split("|");if(p.length==3&&!seen[p[0]+"|"+p[1]]){seen[p[0]+"|"+p[1]]=1;W.push(p);}});})();
+var order=W.map(function(_,i){return i}),idx=0,auto=false,timer=null,voices=[],n=20,lim=20,known={},base=order.slice();
+var $=function(i){return document.getElementById(i)};
+var synth=window.speechSynthesis;
+
+function loadVoices(){voices=synth?synth.getVoices():[];
+  var ja=!!pick("ja");
+  var ko=!!pick("ko");
+  $("msg").textContent=(!synth)?"이 브라우저는 음성 읽기를 지원하지 않아요.":
+    (voices.length&&(!ja||!ko))?"기기에 "+(!ja?"일본어 ":"")+(!ko?"한국어 ":"")+"음성이 없어 읽기가 안 될 수 있어요. 기기 설정에서 음성을 추가해 주세요.":"";
+  var vj=pick("ja"),vk=pick("ko");$("vinfo").textContent=synth?"음성: 일본어 "+(vj?vj.name:"없음")+" / 한국어 "+(vk?vk.name:"없음"):"";}
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices;}
+
+function pick(lang){var re=lang==="ja"?/japan|日本|kyoko|otoya|haruka|ichiro|ayumi|sayaka/i:/korea|한국|yuna|sora|heami/i;
+  return voices.find(function(v){return v.lang.replace("_","-").toLowerCase().indexOf(lang)==0})||voices.find(function(v){return re.test(v.name)});}
+function speak(text,lang,cb){
+  var u=new SpeechSynthesisUtterance(text);u.lang=lang;
+  var v=pick(lang.slice(0,2));if(v)u.voice=v;
+  u.rate=parseFloat($("rate").value);u.volume=parseFloat($("vol").value);
+  u.onend=cb||null;u.onerror=function(e){if(e&&(e.error==="interrupted"||e.error==="canceled"))return;
+    if(lang==="ja-JP")$("msg").textContent="일본어 음성을 재생하지 못했어요 ("+((e&&e.error)||"오류")+"). 기기에 일본어 음성이 설치돼 있는지 확인해 주세요.";
+    if(cb)cb();};
+  try{synth.resume();}catch(e){}
+  synth.speak(u);
+}
+function show(){pvI=-1;var w=W[order[idx]];
+  $("jp").textContent=w[0];$("rd").textContent=w[1]!==w[0]?w[1]:"";
+  $("ko").textContent=w[2];$("cnt").textContent=autoX?Math.min(heard+1,lim)+" / "+lim:(idx+1)+" / "+n;setPos(w);}
+function say(done){
+  if(!synth||!n){return}
+  if(autoX&&heard>=lim){heard=0;loadVoices();rebuild();if(!n)return;}
+  var cur=pvI>=0?pvI:order[idx],isPv=pvI>=0;synth.cancel();var w=W[cur],wi=cur,tok=++sayTok;
+  speak(w[1],"ja-JP",function(){
+    setTimeout(function(){speakKo(w[2].split(" / ")[0],function(){
+      setTimeout(function(){if(tok!==sayTok)return;markP(wi);
+        if(autoX&&!isPv&&heard<lim&&!known[wi]&&!heardW[wi]){heard++;heardW[wi]=1;saveH();skipAdv=!!done;if(heard<lim){rebuild();upd();syncList();}
+          if(heard>=lim){stop();upd();syncList();$("msg").textContent="지정한 "+lim+"개를 모두 들었어요. 자동 재생을 다시 누르면 다음 단어로 이어서 시작해요.";return;}}
+        if(done)done();},done?1200:0);});},400);
+  });
+}
+function go(d){if(!n)return;idx=(idx+d+n)%n;show();}
+function loop(){if(!auto)return;say(function(){if(auto){if(skipAdv)skipAdv=false;else go(1);loop();}});}
+function stop(){auto=false;setIc($("play"),"play","자동 재생");$("play").style.background="";if(synth)synth.cancel();}
+
+$("next").onclick=function(){stop();go(1);say();};
+$("prev").onclick=function(){stop();go(-1);say();};
+$("say").onclick=function(){stop();say();};
+$("play").onclick=function(){
+  if(auto){stop();return;}
+  auto=true;setIc($("play"),"pause","멈춤");$("play").style.background="#166534";loop();};
+$("shuf").onclick=function(){stop();
+  for(var i=base.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=base[i];base[i]=base[j];base[j]=t;}
+  idx=0;sortMode="none";posSort=-1;scriptSort=0;rebuild();syncList();};
+$("rate").oninput=function(){$("rv").textContent=this.value;};
+$("vol").oninput=function(){$("vv").textContent=Math.round(this.value*100)+"%";try{localStorage.setItem("n5vol",this.value)}catch(e){}};
+try{var sv=localStorage.getItem("n5vol");if(sv!==null){$("vol").value=sv;$("vv").textContent=Math.round(sv*100)+"%";}}catch(e){}
+function rebuild(){order=base.filter(function(i){return !known[i]&&!heardW[i]});
+  n=Math.min(lim,order.length);
+  if(!n){$("jp").textContent=W.length?"완료":"준비 중";$("rd").textContent="";$("ko").textContent=W.length?"모든 단어를 외웠어요!":LV.toUpperCase()+" 단어를 아직 추가하지 않았어요";$("cnt").textContent="";$("pos").textContent="";idx=0;stop();return;}
+  if(idx>=n)idx=0;show();}
+function saveK(){try{localStorage.setItem(KEY("k"),JSON.stringify(Object.keys(known)))}catch(e){}}
+function loadK(){try{var a=JSON.parse(localStorage.getItem(KEY("k"))||"[]");a.forEach(function(k){known[k]=1;});}catch(e){}}
+function upd(){var h=$("kc");if(!h)return;
+  h.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px";h.textContent="";
+  var s=document.createElement("span");s.textContent="✅ 외운 단어 "+Object.keys(known).length+"개 · 체크하면 학습에서 빠져요";
+  var r=document.createElement("button");r.textContent="초기화";r.style.cssText="flex:none;padding:6px 12px;font-size:13px";
+  r.onclick=function(){if(!r.dataset.c){r.dataset.c="1";r.textContent="정말 초기화?";r.style.background="#c0392b";r.style.color="#fff";
+    setTimeout(function(){r.dataset.c="";r.textContent="초기화";r.style.background="";r.style.color="";},3000);return;}
+    stop();heard=0;loadVoices();Object.keys(known).forEach(function(k){delete known[k]});saveK();
+    document.querySelectorAll("#list input[type=checkbox]").forEach(function(c){c.checked=false});rebuild();upd();};
+  h.appendChild(s);h.appendChild(r);}
+function pv(i){stop();if(!synth)return;pvI=i;var w=W[i];
+  $("jp").textContent=w[0];$("rd").textContent=w[1]!==w[0]?w[1]:"";$("ko").textContent=w[2];$("cnt").textContent="목록에서 듣기";setPos(w);
+  speak(w[1],"ja-JP",function(){setTimeout(function(){speakKo(w[2].split(" / ")[0],function(){markP(i);});},400);});}
+var OTH="ここ そこ あそこ どこ こちら そちら あちら どちら こっち そっち あっち どっち この その あの どの これ それ あれ どれ こんな どう どうぞ どうも なぜ 誰 どなた 何 何～ いつ いくつ いくら いかが はい いいえ ええ さあ そう それでは では また もっと 少し ちょっと すぐ すぐに ゆっくり ゆっくりと よく 沢山 多分 全部 みんな もしもし 下さい 初めて 丁度 時々 段々 一番 大きな 小さな まっすぐ".split(" ");
+var NA="好き 嫌い 嫌 綺麗 静か 有名 便利 丈夫 大丈夫 大切 大変 上手 下手 元気 結構 大好き 同じ にぎやか りっぱ 暇 色々".split(" ");
+var VB="する できる かかる かける つける かぶる はく やる コピーする".split(" ");
+var NN="お手洗い 近く".split(" ");
+var ORD=["동사","い형용사","な형용사","명사","대명사","부사","연체사","감탄·접속사","접미사"],OM={};
+function addM(c,s){s.split(" ").forEach(function(k){OM[k]=c});}
+addM("대명사","ここ そこ あそこ どこ こちら そちら あちら どちら こっち そっち あっち どっち これ それ あれ どれ 誰 どなた 何 いつ いくつ いくら");
+addM("연체사","この その あの どの こんな 大きな 小さな 何～");
+addM("부사","すぐ すぐに ゆっくり ゆっくりと よく 少し ちょっと もっと 沢山 多分 全部 初めて 丁度 時々 段々 一番 まっすぐ どう なぜ そう いかが");
+addM("감탄·접속사","はい いいえ ええ さあ もしもし どうも どうぞ 下さい それでは では また");
+function posOf(w){var k=w[0],r=w[1];
+  var m=OM[k];if(m)return m;
+  if(k.charAt(0)==="～")return "접미사";
+  if(NA.indexOf(k)>=0)return "な형용사";
+  if(VB.indexOf(k)>=0)return "동사";
+  if(NN.indexOf(k)>=0)return "명사";
+  var last=k.charAt(k.length-1),kana=/[\u3041-\u3096]/.test(last),hasK=/[\u4e00-\u9fff]/.test(k);
+  if(kana&&last==="い"&&r.slice(-1)==="い")return "い형용사";
+  if(kana&&hasK&&/[うくぐすつぬぶむる]$/.test(last)&&!/^[一二三四五六七八九十]つ$/.test(k))return "동사";
+  return "명사";}
+function posC(p){return p==="동사"?"pv":p==="い형용사"?"pa":p==="な형용사"?"pb":p==="명사"?"pn":"po";}
+function setPos(w){var p=posOf(w),e=$("pos");e.textContent=p;e.className="pos "+posC(p);}
+var LV="n5",D={n5:W,n4:[]},switched=false;
+"意見|いけん|의견;漫画|まんが|만화;医学|いがく|의학;運動|うんどう|운동;大学生|だいがくせい|대학생;郊外|こうがい|교외;正月|しょうがつ|정월;規則|きそく|규칙;発音|はつおん|발음;屋上|おくじょう|옥상;失礼|しつれい|실례;機会|きかい|기회;複雑|ふくざつ|복잡;注意|ちゅうい|주의;台風|たいふう|태풍;必要|ひつよう|필요;課長|かちょう|과장;地震|じしん|지진;～学部|がくぶ|~학부;人口|じんこう|인구;中学校|ちゅうがっこう|중학교;小説|しょうせつ|소설;西洋|せいよう|서양;時代|じだい|시대;出席|しゅっせき|출석;社長|しゃちょう|사장;動物園|どうぶつえん|동물원;季節|きせつ|계절;地理|ちり|지리;無理|むり|무리;会議室|かいぎしつ|회의실;人形|にんぎょう|인형;故障|こしょう|고장;気分|きぶん|기분;準備|じゅんび|준비;世界|せかい|세계;住所|じゅうしょ|주소;戦争|せんそう|전쟁;飛行場|ひこうじょう|비행장;柔道|じゅうどう|유도;連絡|れんらく|연락;試合|しあい|시합;適当|てきとう|적당;美術館|びじゅつかん|미술관;文法|ぶんぽう|문법;親切|しんせつ|친절;熱心|ねっしん|열심;事故|じこ|사고;辞典|じてん|사전;原因|げんいん|원인;場所|ばしょ|장소;以下|いか|이하;食料品|しょくりょうひん|식료품;以内|いない|이내;公務員|こうむいん|공무원;運転|うんてん|운전;海岸|かいがん|해안;案内|あんない|안내;技術|ぎじゅつ|기술;下宿|げしゅく|하숙;招待|しょうたい|초대;法律|ほうりつ|법률;貿易|ぼうえき|무역;反対|はんたい|반대;試験|しけん|시험;店員|てんいん|점원;空気|くうき|공기;交通|こうつう|교통;急行|きゅうこう|급행;空港|くうこう|공항;校長|こうちょう|교장;興味|きょうみ|흥미;冷房|れいぼう|냉방;都合|つごう|형편;科学|かがく|과학;入学|にゅうがく|입학;部長|ぶちょう|부장;教会|きょうかい|교회;男性|だんせい|남성;理由|りゆう|이유;生産|せいさん|생산;昼間|ひるま|낮 동안;教育|きょういく|교육;女性|じょせい|여성;国際|こくさい|국제;最近|さいきん|최근;歴史|れきし|역사;不便|ふべん|불편;電灯|でんとう|전등;講堂|こうどう|강당;計画|けいかく|계획;経済|けいざい|경제;以外|いがい|이외;輸入|ゆにゅう|수입;産業|さんぎょう|산업;説明|せつめい|설명;道具|どうぐ|도구;以上|いじょう|이상;特急|とっきゅう|특급;駐車場|ちゅうしゃじょう|주차장;危険|きけん|위험;卒業|そつぎょう|졸업;専門|せんもん|전문;放送|ほうそう|방송;政治|せいじ|정치;市民|しみん|시민;講義|こうぎ|강의;日記|にっき|일기;暖房|だんぼう|난방;普通|ふつう|보통;会場|かいじょう|회장;文学|ぶんがく|문학;退院|たいいん|퇴원;汽車|きしゃ|기차;注射|ちゅうしゃ|주사;最初|さいしょ|최초;安心|あんしん|안심;先輩|せんぱい|선배;約束|やくそく|약속;将来|しょうらい|장래;数学|すうがく|수학;文化|ぶんか|문화;習慣|しゅうかん|습관;出発|しゅっぱつ|출발;新聞社|しんぶんしゃ|신문사;自由|じゆう|자유;失敗|しっぱい|실패;工業|こうぎょう|공업;研究室|けんきゅうしつ|연구실;工場|こうじょう|공장;紹介|しょうかい|소개;水泳|すいえい|수영;経験|けいけん|경험;警察|けいさつ|경찰;簡単|かんたん|간단;特別|とくべつ|특별;復習|ふくしゅう|복습;研究|けんきゅう|연구;途中|とちゅう|도중;入院|にゅういん|입원;安全|あんぜん|안전;相談|そうだん|상담;翻訳|ほんやく|번역;食事|しょくじ|식사;競争|きょうそう|경쟁;会議|かいぎ|회의;生活|せいかつ|생활;関係|かんけい|관계;輸出|ゆしゅつ|수출;神社|じんじゃ|신사;趣味|しゅみ|취미;電報|でんぽう|전보;社会|しゃかい|사회;踏む|ふむ|밟다;～区|く|~구;すっと|すっと|쓱;盗む|ぬすむ|훔치다;大抵|たいてい|대부분;とうとう|とうとう|마침내;ガソリン|ガソリン|가솔린;鳴る|なる|울리다;しっかり|しっかり|단단히;生きる|いきる|살다;苦い|にがい|쓰다;沸く|わく|끓다;やはり|やはり|역시;ステレオ|ステレオ|스테레오;テキスト|テキスト|텍스트;～月|つき|~월;折る|おる|접다;～会|かい|~회;うかがう|うかがう|여쭙다;聞こえる|きこえる|들리다;僕|ぼく|나(남자);必ず|かならず|반드시;壊す|こわす|부수다;怒る|おこる|화내다;床屋|とこや|이발소;オートバイ|オートバイ|오토바이;止む|やむ|그치다;もし|もし|만약;表|おもて|표면;運転手|うんてんしゅ|운전자;予習|よしゅう|예습;心配|しんぱい|걱정;別|べつ|다름;非常に|ひじょうに|매우;お宅|おたく|댁;柔らかい|やわらかい|부드럽다;拾う|ひろう|줍다;気|き|기운;比べる|くらべる|비교하다;ほとんど|ほとんど|거의;だめ|だめ|안 됨;売り場|うりば|판매장;うん|うん|응;焼く|やく|굽다;ごみ|ごみ|쓰레기;アフリカ|アフリカ|아프리카;点|てん|점;一生懸命|いっしょうけんめい|열심히;今度|こんど|이번;建てる|たてる|짓다;彼|かれ|그/남자친구;布団|ふとん|이불;大事|だいじ|소중함;贈り物|おくりもの|선물;泥棒|どろぼう|도둑;～製|せい|~제;日|ひ|해/날;～軒|けん|~채;通る|とおる|통과하다;過ぎる|すぎる|지나다;レポート|レポート|리포트;葉|は|잎;すると|すると|그러자;止める|やめる|그만두다;ガラス|ガラス|유리;厳しい|きびしい|엄하다;エスカレーター|エスカレーター|에스컬레이터;月|つき|달;絹|きぬ|비단;ちっとも|ちっとも|조금도;深い|ふかい|깊다;壊れる|こわれる|부서지다;揺れる|ゆれる|흔들리다;落ちる|おちる|떨어지다;できるだけ|できるだけ|가능한 한;悲しい|かなしい|슬프다;ガス|ガス|가스;祈る|いのる|기도하다;盛ん|さかん|활발함;アルバイト|アルバイト|아르바이트;起こす|おこす|일으키다;噛む|かむ|씹다;赤ちゃん|あかちゃん|아기;浅い|あさい|얕다;嘘|うそ|거짓말;親|おや|부모;それに|それに|게다가;思う|おもう|생각하다;パートタイム|パートタイム|파트타임;申し上げる|もうしあげる|말씀드리다;～式|しき|~식;～家|か|~가(전문가);迎える|むかえる|맞이하다;触る|さわる|만지다;～建て|だて|~층 건물;捕まえる|つかまえる|붙잡다;寄る|よる|들르다;決まる|きまる|결정되다;開く|ひらく|열다;逃げる|にげる|도망가다;だから|だから|그러니까;残念|ざんねん|유감;畳|たたみ|다다미;丁寧|ていねい|정중함;さっき|さっき|아까;怖い|こわい|무섭다;包む|つつむ|싸다;サンドイッチ|サンドイッチ|샌드위치;品物|しなもの|물품;利用|りよう|이용;飾る|かざる|꾸미다;止める|とめる|세우다;恥ずかしい|はずかしい|부끄럽다;用事|ようじ|볼일;ビル|ビル|빌딩;けんかする|けんかする|싸우다;頑張る|がんばる|힘내다;投げる|なげる|던지다;力|ちから|힘;受ける|うける|받다;間違える|まちがえる|틀리다;そんな|そんな|그런;星|ほし|별;やっと|やっと|겨우;足りる|たりる|충분하다;行う|おこなう|행하다;ぶどう|ぶどう|포도;無くなる|なくなる|없어지다;再来月|さらいげつ|다다음 달;林|はやし|숲;倍|ばい|배;痩せる|やせる|마르다;線|せん|선;決める|きめる|정하다;調べる|しらべる|조사하다;寝坊|ねぼう|늦잠;パパ|パパ|아빠;光る|ひかる|빛나다;夫|おっと|남편;雲|くも|구름;坂|さか|언덕;事務所|じむしょ|사무소;小学校|しょうがっこう|초등학교;客|きゃく|손님;昔|むかし|옛날;美しい|うつくしい|아름답다;捨てる|すてる|버리다;どんどん|どんどん|계속;素晴らしい|すばらしい|훌륭하다;終わり|おわり|끝;壁|かべ|벽;一度|いちど|한 번;お礼|おれい|감사;知らせる|しらせる|알리다;歯医者|はいしゃ|치과의사;始める|はじめる|시작하다;もらう|もらう|받다;泣く|なく|울다;治る|なおる|낫다;熱|ねつ|열;お祭り|おまつり|축제;水道|すいどう|수도;匂い|におい|냄새;ベル|ベル|벨;赤ん坊|あかんぼう|아기;おかしい|おかしい|이상하다;変|へん|이상함;残る|のこる|남다;立てる|たてる|세우다;～員|いん|~원;驚く|おどろく|놀라다;頂く|いただく|받다(겸양);祖母|そぼ|할머니;答え|こたえ|답;もちろん|もちろん|물론;漬ける|つける|담그다;受付|うけつけ|접수;スクリーン|スクリーン|스크린;増える|ふえる|늘다;または|または|또는;けがする|けがする|다치다;選ぶ|えらぶ|고르다;心|こころ|마음;～だす|だす|~하기 시작하다;サラダ|サラダ|샐러드;届ける|とどける|전하다;挨拶|あいさつ|인사;景色|けしき|경치;確か|たしか|확실함;ステーキ|ステーキ|스테이크;森|もり|숲;予定|よてい|예정;オーバー|オーバー|오버;乾く|かわく|마르다;石|いし|돌;思い出す|おもいだす|생각해내다;踊る|おどる|춤추다;細かい|こまかい|세세하다;塗る|ぬる|칠하다;ご主人|ごしゅじん|남편분;珍しい|めずらしい|드물다;用|よう|볼일;お嬢さん|おじょうさん|따님;用意|ようい|준비;探す|さがす|찾다;形|かたち|모양;すっかり|すっかり|완전히;アナウンサー|アナウンサー|아나운서;お土産|おみやげ|기념품;消しゴム|けしゴム|지우개;旅館|りょかん|료칸;寂しい|さびしい|외롭다;火|ひ|불;育てる|そだてる|기르다;味噌|みそ|된장;お祝い|おいわい|축하;乗り物|のりもの|탈것;通う|かよう|다니다;連れる|つれる|데리고 가다;小鳥|ことり|작은 새;ジャム|ジャム|잼;鏡|かがみ|거울;進む|すすむ|나아가다;楽しむ|たのしむ|즐기다;おる|おる|있다(겸양);申す|もうす|말하다(겸양);真面目|まじめ|성실함;ごらんになる|ごらんになる|보시다;泊まる|とまる|묵다;よろしい|よろしい|좋다;今夜|こんや|오늘 밤;おつり|おつり|거스름돈;チェックする|チェックする|체크하다;会話|かいわ|회화;ワープロ|ワープロ|워드프로세서;喜ぶ|よろこぶ|기뻐하다;皆|みな|모두;味|あじ|맛;手袋|てぶくろ|장갑;ごちそう|ごちそう|대접;踊り|おどり|춤;引っ越す|ひっこす|이사하다;遠慮|えんりょ|사양;亡くなる|なくなる|돌아가시다;はっきり|はっきり|분명히;差し上げる|さしあげる|드리다;気持ち|きもち|기분;祖父|そふ|할아버지;港|みなと|항구;予約|よやく|예약;凄い|すごい|대단하다;片付ける|かたづける|정리하다;写す|うつす|베끼다;パソコン|パソコン|컴퓨터;火事|かじ|화재;足す|たす|더하다;彼ら|かれら|그들;一杯|いっぱい|가득;アメリカ|アメリカ|미국;着物|きもの|기모노;おもちゃ|おもちゃ|장난감;暮れる|くれる|저물다;釣る|つる|낚다;～ちゃん|ちゃん|~짱;打つ|うつ|치다;あんな|あんな|저런;謝る|あやまる|사과하다;米|こめ|쌀;邪魔|じゃま|방해;隅|すみ|구석;伺う|うかがう|찾아뵙다;再来週|さらいしゅう|다다음 주;夢|ゆめ|꿈;喉|のど|목;周り|まわり|주변;血|ち|피;～続ける|つづける|계속 ~하다;毛|け|털;ひどい|ひどい|심하다;随分|ずいぶん|꽤;～やすい|やすい|~하기 쉽다;押し入れ|おしいれ|벽장;叱る|しかる|꾸짖다;サンダル|サンダル|샌들;びっくりする|びっくりする|놀라다;うまい|うまい|맛있다;変える|かえる|바꾸다;子|こ|아이;沸かす|わかす|끓이다;レジ|レジ|계산대;特に|とくに|특히;空く|あく|비다;通り|とおり|거리;下着|したぎ|속옷;こう|こう|이렇게;是非|ぜひ|꼭;裏|うら|뒤;おいでになる|おいでになる|오시다;変わる|かわる|바뀌다;済む|すむ|끝나다;ハンバーグ|ハンバーグ|햄버그;市|し|시;引き出し|ひきだし|서랍;遊び|あそび|놀이;支度|したく|준비;～始める|はじめる|~하기 시작하다;見える|みえる|보이다;十分|じゅうぶん|충분함;音|おと|소리;きっと|きっと|꼭;まず|まず|우선;遠く|とおく|먼 곳;大体|だいたい|대체로;折れる|おれる|부러지다;正しい|ただしい|올바르다;返事|へんじ|대답;都|と|도(都);伝える|つたえる|전하다;お金持ち|おかねもち|부자;島|しま|섬;滑る|すべる|미끄러지다;それほど|それほど|그 정도;プレゼント|プレゼント|선물;妻|つま|아내;帰り|かえり|귀가;具合|ぐあい|상태;固い|かたい|딱딱하다;スーツ|スーツ|정장;髪|かみ|머리카락;天気予報|てんきよほう|일기예보;彼女|かのじょ|그녀;間|あいだ|사이;それで|それで|그래서;枝|えだ|가지;そろそろ|そろそろ|슬슬;送る|おくる|보내다;あげる|あげる|주다;騒ぐ|さわぐ|떠들다;尋ねる|たずねる|묻다;ファックス|ファックス|팩스;負ける|まける|지다;指輪|ゆびわ|반지;田舎|いなか|시골;見つける|みつける|찾아내다;高校生|こうこうせい|고등학생;昼休み|ひるやすみ|점심시간;忘れ物|わすれもの|분실물;下りる|おりる|내려오다;腕|うで|팔;訳|わけ|이유;承知|しょうち|승낙;高校|こうこう|고등학교;似る|にる|닮다;～おわる|おわる|~을 끝내다;留守|るす|부재;割合|わりあい|비율;寺|てら|절;慣れる|なれる|익숙해지다;手伝う|てつだう|돕다;なるほど|なるほど|과연;くださる|くださる|주시다;息子|むすこ|아들;お子さん|おこさん|자제분;笑う|わらう|웃다;運ぶ|はこぶ|나르다;光|ひかり|빛;お見舞い|おみまい|문병;席|せき|자리;～様|さま|~님;ご存じ|ごぞんじ|아시다;下がる|さがる|내려가다;字|じ|글자;アジア|アジア|아시아;褒める|ほめる|칭찬하다;空く|すく|비다;最も|もっとも|가장;合う|あう|맞다;～代|だい|~대;最後|さいご|마지막;値段|ねだん|가격;展覧会|てんらんかい|전람회;久しぶり|ひさしぶり|오랜만;カーテン|カーテン|커튼;遅れる|おくれる|늦다;見つかる|みつかる|발견되다;召し上がる|めしあがる|드시다;太る|ふとる|살찌다;直る|なおる|고쳐지다;集める|あつめる|모으다;直す|なおす|고치다;続く|つづく|계속되다;世話|せわ|돌봄;近所|きんじょ|이웃;億|おく|억;払う|はらう|지불하다;焼ける|やける|타다;君|きみ|너;冷える|ひえる|식다;点く|つく|켜지다;この間|このあいだ|지난번;格好|かっこう|모습;かまう|かまう|상관하다;続ける|つづける|계속하다;落とす|おとす|떨어뜨리다;明日|あす|내일;拝見|はいけん|배견;割れる|われる|깨지다;背中|せなか|등;いじめる|いじめる|괴롭히다;回る|まわる|돌다;～君|くん|~군;おっしゃる|おっしゃる|말씀하시다;眠い|ねむい|졸리다;濡れる|ぬれる|젖다;倒れる|たおれる|쓰러지다;スーパーマーケット|スーパーマーケット|슈퍼마켓;アクセサリー|アクセサリー|액세서리;考える|かんがえる|생각하다;向かう|むかう|향하다;仕方|しかた|방법;首|くび|목;代わり|かわり|대신;移る|うつる|옮기다;スーツケース|スーツケース|여행 가방;ひげ|ひげ|수염;けれど|けれど|하지만;舟|ふね|배;動く|うごく|움직이다;コンサート|コンサート|콘서트;虫|むし|벌레;優しい|やさしい|상냥하다;コンピュータ|コンピュータ|컴퓨터;植える|うえる|심다;両方|りょうほう|양쪽;汚れる|よごれる|더러워지다;勝つ|かつ|이기다;砂|すな|모래;取り替える|とりかえる|바꾸다;急ぐ|いそぐ|서두르다;参る|まいる|가다(겸양);間に合う|まにあう|시간에 맞다;役に立つ|やくにたつ|도움이 되다;もうすぐ|もうすぐ|곧;真中|まんなか|한가운데;戻る|もどる|돌아오다;ケーキ|ケーキ|케이크;草|くさ|풀;込む|こむ|붐비다;訪ねる|たずねる|방문하다;下げる|さげる|내리다;花見|はなみ|꽃구경;乗り換える|のりかえる|갈아타다;別れる|わかれる|헤어지다;～町|ちょう|~마을;看護婦|かんごふ|간호사;見物|けんぶつ|구경;ガソリンスタンド|ガソリンスタンド|주유소;テニス|テニス|테니스;眠る|ねむる|자다;上がる|あがる|오르다;娘|むすめ|딸;湯|ゆ|뜨거운 물;湖|みずうみ|호수;集まる|あつまる|모이다;糸|いと|실;ピアノ|ピアノ|피아노;～目|め|~째;番組|ばんぐみ|프로그램;急|きゅう|급함;棚|たな|선반;木綿|もめん|면;タイプ|タイプ|타입;すり|すり|소매치기;嬉しい|うれしい|기쁘다;アルコール|アルコール|알코올;ソフト|ソフト|소프트;大分|だいぶ|상당히;楽しみ|たのしみ|즐거움;家内|かない|아내;指|ゆび|손가락;これから|これから|이제부터;たまに|たまに|가끔;けんか|けんか|싸움;コピー|コピー|복사".split(";").forEach(function(s){var p=s.split("|");if(p.length==3)D.n4.push(p);});
+function KEY(s){return LV==="n5"?{k:"n5known2",h:"n5heard",p:"n5played"}[s]:LV+s;}
+function renderTabs(){var t=$("tabs");t.innerHTML="";
+  [["n5","N5"],["n4","N4"]].forEach(function(o){var d=document.createElement("div");d.className="tab"+(LV===o[0]?" on":"");d.setAttribute("role","tab");
+    d.textContent=LV===o[0]?o[1]+" 단어 읽어주기":o[1];
+    d.onclick=function(){if(LV!==o[0])switchLevel(o[0]);};t.appendChild(d);});}
+function switchLevel(lv){stop();switched=true;LV=lv;W=D[lv];base=W.map(function(_,i){return i});
+  known={};heardW={};playedW={};loadK();loadH();loadP();idx=0;sortMode="none";posSort=-1;scriptSort=0;heard=0;loadVoices();
+  $("num").max=W.length;$("mx").textContent=W.length;
+  var l=$("list");l.innerHTML="";l.hidden=true;$("lbox").style.display="none";setIc($("lst"),"list","단어 목록");
+  renderTabs();rebuild();}
+var autoX=false,skipAdv=false,sayTok=0,heard=0,heardW={},playedW={},pvI=-1,korOn=true;
+function speakKo(t,cb){if(!korOn){cb();return;}speak(t,"ko-KR",cb);}
+var IC={play:'<path d="M7 4v16l13-8z"/>',pause:'<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+  vol:'<path d="M15 8a5 5 0 0 1 0 8"/><path d="M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15h-2a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2l3.5-4.5a.8.8 0 0 1 1.5.5v14a.8.8 0 0 1-1.5.5l-3.5-4.5"/>',
+  shuf:'<path d="M18 4l3 3l-3 3"/><path d="M18 20l3-3l-3-3"/><path d="M3 7h3a5 5 0 0 1 5 5a5 5 0 0 0 5 5h5"/><path d="M21 7h-5a4.98 4.98 0 0 0-3 1m-4 8a4.98 4.98 0 0 1-3 1h-3"/>',
+  list:'<path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M5 6v.01"/><path d="M5 12v.01"/><path d="M5 18v.01"/>',
+  x:'<path d="M18 6l-12 12"/><path d="M6 6l12 12"/>',top:'<path d="M12 10v10"/><path d="M12 10l4 4"/><path d="M12 10l-4 4"/><path d="M4 4h16"/>',bot:'<path d="M12 14v-10"/><path d="M12 14l4-4"/><path d="M12 14l-4-4"/><path d="M4 20h16"/>',prev:'<path d="M15 6l-6 6l6 6"/>',next:'<path d="M9 6l6 6l-6 6"/>'};
+function setIc(b,n,t){b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>'+(t?'<span>'+t+'</span>':'');}
+function saveP(){try{localStorage.setItem(KEY("p"),JSON.stringify(Object.keys(playedW)))}catch(e){}}
+function loadP(){try{var a=JSON.parse(localStorage.getItem(KEY("p"))||"[]");a.forEach(function(k){playedW[k]=1;});}catch(e){}}
+function markP(i){if(!playedW[i]){playedW[i]=1;saveP();}
+  var e=document.querySelector('#list .it[data-i="'+i+'"]');if(e)e.classList.add("pl");upd();}
+function saveH(){try{localStorage.setItem(KEY("h"),JSON.stringify(Object.keys(heardW)))}catch(e){}}
+function loadH(){try{var a=JSON.parse(localStorage.getItem(KEY("h"))||"[]");a.forEach(function(k){heardW[k]=1;});}catch(e){}}
+function resetBtn(fn,lb){lb=lb||"초기화";var r=document.createElement("button");r.textContent=lb;r.style.cssText="flex:none;padding:6px 12px;font-size:13px";
+  r.onclick=function(){if(!r.dataset.c){r.dataset.c="1";r.textContent="정말 초기화?";r.style.background="#c0392b";r.style.color="#fff";
+    setTimeout(function(){r.dataset.c="";r.textContent=lb;r.style.background="";r.style.color="";},3000);return;}fn();};return r;}
+function hrow(txt,fn,col){var d=document.createElement("div");d.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:4px 0";
+  var s=document.createElement("span");
+  if(col){var ic=document.createElement("b");ic.textContent="✓";ic.style.cssText="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:4px;background:"+col+";color:#fff;font-size:13px;margin-right:8px;vertical-align:middle";s.appendChild(ic);s.appendChild(document.createTextNode(txt));}else s.textContent=txt;
+  d.appendChild(s);d.appendChild(resetBtn(fn));return d;}
+function upd(){var h=$("kc");if(!h)return;h.style.cssText="display:block";h.textContent="";
+  h.appendChild(hrow("외운 단어 "+Object.keys(known).length+"개 · 초록 체크",function(){stop();Object.keys(known).forEach(function(k){delete known[k]});saveK();syncList();rebuild();upd();},"#27ae60"));
+  h.appendChild(hrow("들은 단어 "+Object.keys(heardW).length+"개 · 파랑 체크",function(){stop();heard=0;loadVoices();Object.keys(heardW).forEach(function(k){delete heardW[k]});saveH();syncList();rebuild();upd();},"#2a7de1"));
+  h.appendChild(hrow("들은 표시 "+Object.keys(playedW).length+"개 · 진한 초록 배경",function(){Object.keys(playedW).forEach(function(k){delete playedW[k]});saveP();syncList();upd();},"#166534"));}
+function syncList(){var l=$("list");if(!l.childNodes.length)return;var vis=!l.hidden;l.innerHTML="";if(vis){l.hidden=true;$("lst").onclick();}}
+var sortMode="none",posSort=-1,scriptSort=0;
+function hira(s){return s.replace(/[\u30a1-\u30f6]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-96)});}
+function ordIdx(){return ordScript(ordPos());}
+function ordScript(a){if(!scriptSort)return a;var ix={};a.forEach(function(v,j){ix[v]=j});
+  function k(i){var f=/[\u30a1-\u30fa]/.test(W[i][1])?1:0;return scriptSort===1?f:1-f;}
+  return a.sort(function(x,y){return k(x)-k(y)||ix[x]-ix[y];});}
+function ordPos(){var a=ordBase();if(posSort<0)return a;
+  var R={},ix={},N=ORD.length;ORD.forEach(function(p,i){R[p]=i});a.forEach(function(v,j){ix[v]=j});
+  return a.sort(function(x,y){return (R[posOf(W[x])]-posSort+N)%N-(R[posOf(W[y])]-posSort+N)%N||ix[x]-ix[y];});}
+function ordBase(){var a=base.slice();
+  if(sortMode==="none")return a;
+  a.sort(function(x,y){var r=hira(W[x][1]).localeCompare(hira(W[y][1]),"ja")||x-y;return sortMode==="asc"?r:-r;});
+  return a;}
+function sortBar(l){var b=document.createElement("div");b.className="it";
+  [["none","초기화"]].forEach(function(o){
+    var x=document.createElement("button");x.textContent=o[1];
+    x.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+"";
+    x.onclick=function(){stop();base=W.map(function(_,i){return i});idx=0;sortMode=o[0];posSort=-1;scriptSort=0;rebuild();l.innerHTML="";l.hidden=true;$("lst").onclick();};
+    b.appendChild(x);});
+  var g=document.createElement("button");g.textContent=sortMode==="asc"?"あ ▲":sortMode==="desc"?"わ ▼":"기본순";
+  g.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+(sortMode!=="none"?";background:#27ae60;color:#fff;border:none":"");
+  g.onclick=function(){sortMode=sortMode==="none"?"asc":sortMode==="asc"?"desc":"none";l.innerHTML="";l.hidden=true;$("lst").onclick();};
+  b.appendChild(g);
+  var y=document.createElement("button");y.textContent=(posSort<0?"품사순":"품사: "+ORD[posSort])+" ▾";
+  y.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+(posSort>=0?";background:#27ae60;color:#fff;border:none":"");
+  var pm=document.createElement("div");pm.style.cssText="display:none;position:absolute;z-index:30;min-width:160px;background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.3)";b.style.position="relative";
+  [""].concat(ORD).forEach(function(nm,k){var o=document.createElement("div");
+    o.textContent=k===0?"품사순 해제":(k-1===posSort?"✓ ":"")+nm;
+    o.style.cssText="padding:10px 12px;font-size:14px;border-bottom:1px solid var(--bd)"+(k>0&&k-1===posSort?";font-weight:700;color:#27ae60":"");
+    o.onclick=function(){posSort=k-1;l.innerHTML="";l.hidden=true;$("lst").onclick();};
+    pm.appendChild(o);});
+  y.onclick=function(){if(pm.style.display!=="none"){pm.style.display="none";return;}
+    pm.style.left=y.offsetLeft+"px";pm.style.top=(y.offsetTop+y.offsetHeight+4)+"px";pm.style.display="block";
+    var cl=function(e){if(!document.body.contains(pm)){document.removeEventListener("click",cl);return;}
+      if(e.target!==y&&!pm.contains(e.target)){pm.style.display="none";document.removeEventListener("click",cl);}};
+    setTimeout(function(){document.addEventListener("click",cl);},0);};
+  b.appendChild(y);
+  var z=document.createElement("button");z.textContent=scriptSort===0?"문자 구분":scriptSort===1?"히라가나":"가타카나";
+  z.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+(scriptSort>0?";background:#27ae60;color:#fff;border:none":"");
+  z.onclick=function(){scriptSort=(scriptSort+1)%3;l.innerHTML="";l.hidden=true;$("lst").onclick();};
+  b.appendChild(z);b.appendChild(pm);
+  l.appendChild(b);}
+$("num").max=W.length;$("mx").textContent=W.length;
+$("lst").onclick=function(){var l=$("list");
+  if(!l.hidden){l.hidden=true;$("lbox").style.display="none";setIc(this,"list","단어 목록");return;}
+  if(!l.childNodes.length){var h=document.createElement("div");h.className="it";h.id="kc";l.appendChild(h);upd();sortBar(l);var c=0;ordIdx().forEach(function(i){var w=W[i];var d=document.createElement("div");d.className="it";
+    var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!known[i];
+    cb.style.cssText="width:22px;height:22px;vertical-align:middle;margin-right:10px;accent-color:#27ae60";
+    cb.onchange=function(){stop();if(cb.checked)known[i]=1;else delete known[i];saveK();rebuild();upd();};
+    var sp=document.createElement("span");
+    sp.textContent=(++c)+". "+w[0]+(w[1]!==w[0]?" ("+w[1]+")":"")+" — "+w[2];
+    sp.onclick=function(){pv(i);window.scrollTo(0,0);};
+    var pb=document.createElement("span");var pt=posOf(w);pb.className="pos "+posC(pt);pb.textContent=pt;
+    var hb=document.createElement("input");hb.type="checkbox";hb.checked=!!heardW[i];hb.title="들은 단어";cb.title="외운 단어";
+    hb.style.cssText="width:22px;height:22px;vertical-align:middle;margin-right:10px;accent-color:#2a7de1";
+    hb.onchange=function(){stop();if(hb.checked)heardW[i]=1;else delete heardW[i];saveH();rebuild();upd();};
+    d.dataset.i=i;if(playedW[i])d.className="it pl";
+    d.appendChild(cb);d.appendChild(hb);d.appendChild(sp);d.appendChild(pb);l.appendChild(d);});}
+  l.hidden=false;$("lbox").style.display="flex";setIc(this,"x","목록 닫기");};
+$("num").onchange=function(){var v=parseInt(this.value,10);
+  if(isNaN(v))v=20;v=Math.max(1,Math.min(W.length,v));
+  this.value=v;lim=v;heard=0;loadVoices();idx=0;stop();rebuild();};
+setIc($("prev"),"prev","이전");setIc($("next"),"next","다음");setIc($("play"),"play","자동 재생");setIc($("say"),"vol");setIc($("shuf"),"shuf","섞기");setIc($("lst"),"list","단어 목록");
+try{korOn=localStorage.getItem("n5kor")!=="0";}catch(e){}
+$("kk").checked=korOn;$("kk").onchange=function(){korOn=this.checked;try{localStorage.setItem("n5kor",korOn?"1":"0")}catch(e){}};
+setIc($("lclose"),"x","목록 닫기");$("lclose").onclick=function(){$("lst").onclick();};
+setIc($("ltop"),"top","맨 위로");setIc($("lbot"),"bot","맨 아래로");
+$("ltop").onclick=function(){$("list").scrollIntoView({behavior:"smooth",block:"start"});};
+$("lbot").onclick=function(){var l=$("list");if(l.lastElementChild)l.lastElementChild.scrollIntoView({behavior:"smooth",block:"end"});};
+(function(){var g=$("gear"),p=$("setp");
+  g.onclick=function(e){e.stopPropagation();p.hidden=!p.hidden;};
+  $("setx").onclick=function(){p.hidden=true;};
+  document.addEventListener("click",function(e){if(!p.hidden&&!p.contains(e.target)&&!g.contains(e.target))p.hidden=true;});})();
+renderTabs();loadK();loadH();loadP();try{autoX=localStorage.getItem("n5autox")==="1";}catch(e){}
+$("ax").checked=autoX;$("ax").onchange=function(){autoX=this.checked;heard=0;loadVoices();if(n)show();try{localStorage.setItem("n5autox",autoX?"1":"0")}catch(e){}};
+rebuild();
+</script>
+</body>
+</html>
