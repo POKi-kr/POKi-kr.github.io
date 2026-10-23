@@ -1,4 +1,4 @@
-# POKi-kr.github.io
+japanese-korean words
 
 일본어 단어 읽기 프로그램 
 
