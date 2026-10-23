@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>단어 읽어주기</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#faf8f5;--fg:#222;--card:#fff;--mut:#777;--ac:#c0392b;--bd:#e3ded6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#181818;--fg:#eee;--card:#242424;--mut:#999;--ac:#e8806f;--bd:#3a3a3a}}
+:root[data-theme="dark"]{--bg:#181818;--fg:#eee;--card:#242424;--mut:#999;--ac:#e8806f;--bd:#3a3a3a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{position:relative;margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Noto Sans KR","Noto Sans JP",sans-serif;padding:16px;max-width:520px;margin:0 auto}
+#tabs{display:flex;align-items:flex-end;gap:2px;margin:10px 0 0;padding:0 4px;border-bottom:1px solid var(--bd)}
+.tab{border:1px solid var(--bd);border-bottom:none;border-radius:10px 10px 0 0;padding:9px 16px;font-size:14px;color:var(--mut);cursor:pointer;white-space:nowrap;user-select:none}
+.tab.on{background:var(--card);color:var(--fg);font-weight:700;position:relative;top:1px;border-bottom:1px solid var(--card)}
+.card{position:relative;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:28px 16px;text-align:center}
+#ck{position:absolute;top:12px;left:12px;width:26px;height:26px;margin:0;accent-color:#27ae60;cursor:pointer}
+#jp{font-size:44px;font-weight:700}
+#rd{font-size:18px;color:var(--mut);margin-top:6px;min-height:1.5em;line-height:1.5em}
+#ko{font-size:24px;margin-top:14px;color:#27ae60}
+#cnt{font-size:13px;color:var(--mut);margin-top:14px}
+.row{display:flex;gap:8px;margin-top:12px}
+button{flex:1;padding:14px 8px;font-size:16px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+button.p{background:#27ae60;color:#fff;border:none;font-weight:700}
+.row button{display:flex;align-items:center;justify-content:center;gap:6px;height:52px;padding:0 6px;font-size:14px;white-space:nowrap}
+button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+label{display:block;font-size:13px;color:var(--mut);margin-top:14px}
+input[type=range]{width:100%;accent-color:#27ae60}
+#msg{font-size:13px;color:var(--mut);margin-top:10px}
+#gear{position:absolute;top:24px;right:16px;z-index:41;width:40px;height:40px;padding:0;flex:none;display:flex;align-items:center;justify-content:center;border-radius:10px}
+#setp{position:absolute;top:70px;right:16px;z-index:40;width:min(300px,calc(100% - 32px));box-sizing:border-box;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px 18px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#setp[hidden]{display:none}
+#lbox{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;z-index:35;flex-direction:column;align-items:flex-end;gap:8px}
+#lbox #ltop,#lbox #lbot{align-self:flex-start}
+#lbox button{flex:none;height:44px;padding:0 16px;border-radius:22px;display:flex;align-items:center;gap:6px;background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.35);font-size:14px;white-space:nowrap}
+#setx{flex:none;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px}
+#list{margin-top:14px;background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+#list[hidden]{display:none}
+.it{padding:12px 14px;border-bottom:1px solid var(--bd);font-size:15px}
+.it:last-child{border-bottom:none}
+.it.pl{background:rgba(22,101,52,.4)}
+.pos{display:inline-block;font-size:12px;padding:2px 8px;border-radius:10px;margin-left:8px;white-space:nowrap;font-weight:600}
+.pos:empty{display:none}
+.pv{background:rgba(42,125,225,.15);color:#2a7de1}
+.pa{background:rgba(230,126,34,.15);color:#e67e22}
+.pn{background:rgba(39,174,96,.15);color:#27ae60}
+.pb{background:rgba(155,89,182,.15);color:#9b59b6}
+.po{background:rgba(128,128,128,.18);color:var(--mut)}
+</style>
+</head>
+<body>
+<button id="gear" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0-6 0"/></svg></button>
+<div id="tabs" role="tablist"></div>
+<div style="height:12px"></div>
+<div id="vinfo" style="font-size:12px;color:var(--mut);margin:0 0 8px"></div>
+<div class="card">
+  <input type="checkbox" id="ck" aria-label="외운 단어로 체크" title="외운 단어">
+  <div id="jp">—</div>
+  <div id="rd"></div>
+  <div style="margin-top:8px"><span id="pos" class="pos" style="margin-left:0"></span></div>
+  <div id="ko"></div>
+  <div id="cnt"></div>
+  <div style="margin-top:10px"><button id="say" aria-label="한 번 듣기" style="flex:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:14px;width:auto"></button></div>
+</div>
+<div class="row">
+  <button id="prev" aria-label="이전"></button>
+  <button id="play" class="p" aria-label="자동 재생"></button>
+  <button id="next" aria-label="다음"></button>
+</div>
+<div class="row">
+  <button id="shuf" aria-label="섞기"></button>
+  <button id="lst" aria-label="단어 목록"></button>
+</div>
+<div id="list" hidden></div>
+<label>단어 수 (1~<span id="mx">44</span>)
+  <input type="number" id="num" min="1" max="44" value="20" inputmode="numeric" style="width:100%;box-sizing:border-box;padding:12px;font-size:16px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg)">
+</label>
+<div id="setp" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px"><span>설정</span><button id="setx" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg></button></div>
+  <label>음량 <span id="vv">100%</span>
+    <input type="range" id="vol" min="0" max="1" step="0.1" value="1">
+  </label>
+  <label>속도 <span id="rv">0.8</span>
+    <input type="range" id="rate" min="0.5" max="1.2" step="0.1" value="0.8">
+  </label>
+  <label style="display:flex;align-items:center;gap:8px;color:var(--fg);font-size:14px;margin-top:16px"><input type="checkbox" id="kk" checked style="width:20px;height:20px;accent-color:#27ae60">한국어 뜻 듣기</label>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <button id="addf" style="flex:1;padding:10px 8px;font-size:14px">단어 파일 추가</button>
+    <button id="delt" style="flex:1;padding:10px 8px;font-size:14px">현재 탭 삭제</button>
+  </div>
+  <div style="font-size:12px;color:var(--mut);margin-top:10px;line-height:1.5">txt 한 줄에 일본어|읽기|뜻 (4번째 칸에 품사 선택). UTF-8로 저장해 주세요.</div>
+  <input type="file" id="wfile" accept=".txt,text/plain" style="display:none">
+</div>
+<label style="display:flex;align-items:center;gap:8px;color:var(--fg);font-size:14px"><input type="checkbox" id="ax" style="width:20px;height:20px;accent-color:#27ae60">한 번 들은 단어 빼기</label>
+<div id="msg"></div>
+<div id="lbox" style="display:none"><button id="ltop" aria-label="맨 위로"></button><button id="lbot" aria-label="맨 아래로"></button><button id="lclose" aria-label="목록 닫기"></button></div>
+
+<script>
+var W=[];
+var order=W.map(function(_,i){return i}),idx=0,auto=false,timer=null,voices=[],n=20,lim=20,known={},base=order.slice();
+var $=function(i){return document.getElementById(i)};
+var synth=window.speechSynthesis;
+
+function loadVoices(){voices=synth?synth.getVoices():[];
+  var ja=!!pick("ja");
+  var ko=!!pick("ko");
+  $("msg").textContent=(!synth)?"이 브라우저는 음성 읽기를 지원하지 않아요.":
+    (voices.length&&(!ja||!ko))?"기기에 "+(!ja?"일본어 ":"")+(!ko?"한국어 ":"")+"음성이 없어 읽기가 안 될 수 있어요. 기기 설정에서 음성을 추가해 주세요.":"";
+  var vj=pick("ja"),vk=pick("ko");$("vinfo").textContent=synth?"음성: 일본어 "+(vj?vj.name:"없음")+" / 한국어 "+(vk?vk.name:"없음"):"";}
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices;}
+
+function pick(lang){var re=lang==="ja"?/japan|日本|kyoko|otoya|haruka|ichiro|ayumi|sayaka/i:/korea|한국|yuna|sora|heami/i;
+  return voices.find(function(v){return v.lang.replace("_","-").toLowerCase().indexOf(lang)==0})||voices.find(function(v){return re.test(v.name)});}
+function speak(text,lang,cb){
+  var u=new SpeechSynthesisUtterance(text);u.lang=lang;
+  var v=pick(lang.slice(0,2));if(v)u.voice=v;
+  u.rate=parseFloat($("rate").value);u.volume=parseFloat($("vol").value);
+  u.onend=cb||null;u.onerror=function(e){if(e&&(e.error==="interrupted"||e.error==="canceled"))return;
+    if(lang==="ja-JP")$("msg").textContent="일본어 음성을 재생하지 못했어요 ("+((e&&e.error)||"오류")+"). 기기에 일본어 음성이 설치돼 있는지 확인해 주세요.";
+    if(cb)cb();};
+  try{synth.resume();}catch(e){}
+  synth.speak(u);
+}
+function show(){pvI=-1;$("ck").style.visibility="visible";$("ck").checked=false;var w=W[order[idx]];
+  $("jp").textContent=w[0];$("rd").textContent=w[1]!==w[0]?w[1]:"";
+  $("ko").textContent=w[2];$("cnt").textContent=autoX?Math.min(heard+1,lim)+" / "+lim:(idx+1)+" / "+n;setPos(w);}
+function say(done){
+  if(!synth||!n){return}
+  if(autoX&&heard>=lim){heard=0;loadVoices();rebuild();if(!n)return;}
+  var cur=pvI>=0?pvI:order[idx],isPv=pvI>=0;synth.cancel();var w=W[cur],wi=cur,tok=++sayTok;
+  speak(w[1],"ja-JP",function(){
+    setTimeout(function(){if(tok!==sayTok)return;speakKo(w[2].split(" / ")[0],function(){
+      setTimeout(function(){if(tok!==sayTok)return;markP(wi);
+        if(autoX&&!isPv&&heard<lim&&!known[wi]&&!heardW[wi]){heard++;heardW[wi]=1;saveH();skipAdv=!!done;if(heard<lim){rebuild();upd();syncList();}
+          if(heard>=lim){stop();upd();syncList();$("msg").textContent="지정한 "+lim+"개를 모두 들었어요. 자동 재생을 다시 누르면 다음 단어로 이어서 시작해요.";return;}}
+        if(done)done();},done?1200:0);});},400);
+  });
+}
+function go(d){if(!n)return;idx=(idx+d+n)%n;show();}
+function loop(){if(!auto)return;say(function(){if(auto){if(skipAdv)skipAdv=false;else go(1);loop();}});}
+function stop(){auto=false;setIc($("play"),"play","자동 재생");$("play").style.background="";if(synth)synth.cancel();}
+
+$("next").onclick=function(){stop();go(1);say();};
+$("prev").onclick=function(){stop();go(-1);say();};
+$("say").onclick=function(){stop();say();};
+$("play").onclick=function(){
+  if(auto){stop();return;}
+  auto=true;setIc($("play"),"pause","멈춤");$("play").style.background="#166534";loop();};
+$("shuf").onclick=function(){stop();
+  for(var i=base.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=base[i];base[i]=base[j];base[j]=t;}
+  idx=0;sortMode="none";posSort=-1;scriptSort=0;rebuild();syncList();};
+$("rate").oninput=function(){$("rv").textContent=this.value;};
+$("vol").oninput=function(){$("vv").textContent=Math.round(this.value*100)+"%";try{localStorage.setItem("n5vol",this.value)}catch(e){}};
+try{var sv=localStorage.getItem("n5vol");if(sv!==null){$("vol").value=sv;$("vv").textContent=Math.round(sv*100)+"%";}}catch(e){}
+function rebuild(){order=base.filter(function(i){return !known[i]&&!heardW[i]});
+  n=Math.min(lim,order.length);
+  if(!n){$("jp").textContent=W.length?"완료":"단어 없음";$("rd").textContent="";$("ko").textContent=W.length?"모든 단어를 외웠어요!":"단어 파일(txt)을 추가해 주세요";$("cnt").textContent="";$("pos").textContent="";idx=0;stop();$("ck").style.visibility="hidden";return;}
+  if(idx>=n)idx=0;show();}
+function saveK(){try{localStorage.setItem(KEY("k"),JSON.stringify(Object.keys(known)))}catch(e){}}
+function loadK(){try{var a=JSON.parse(localStorage.getItem(KEY("k"))||"[]");a.forEach(function(k){known[k]=1;});}catch(e){}}
+function upd(){var h=$("kc");if(!h)return;
+  h.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px";h.textContent="";
+  var s=document.createElement("span");s.textContent="✅ 외운 단어 "+Object.keys(known).length+"개 · 체크하면 학습에서 빠져요";
+  var r=document.createElement("button");r.textContent="초기화";r.style.cssText="flex:none;padding:6px 12px;font-size:13px";
+  r.onclick=function(){if(!r.dataset.c){r.dataset.c="1";r.textContent="정말 초기화?";r.style.background="#c0392b";r.style.color="#fff";
+    setTimeout(function(){r.dataset.c="";r.textContent="초기화";r.style.background="";r.style.color="";},3000);return;}
+    stop();heard=0;loadVoices();Object.keys(known).forEach(function(k){delete known[k]});saveK();
+    document.querySelectorAll("#list input[type=checkbox]").forEach(function(c){c.checked=false});rebuild();upd();};
+  h.appendChild(s);h.appendChild(r);}
+function pv(i){stop();if(!synth)return;pvI=i;$("ck").style.visibility="visible";$("ck").checked=!!known[i];var w=W[i];
+  $("jp").textContent=w[0];$("rd").textContent=w[1]!==w[0]?w[1]:"";$("ko").textContent=w[2];$("cnt").textContent="목록에서 듣기";setPos(w);
+  speak(w[1],"ja-JP",function(){setTimeout(function(){speakKo(w[2].split(" / ")[0],function(){markP(i);});},400);});}
+var OTH="ここ そこ あそこ どこ こちら そちら あちら どちら こっち そっち あっち どっち この その あの どの これ それ あれ どれ こんな どう どうぞ どうも なぜ 誰 どなた 何 何～ いつ いくつ いくら いかが はい いいえ ええ さあ そう それでは では また もっと 少し ちょっと すぐ すぐに ゆっくり ゆっくりと よく 沢山 多分 全部 みんな もしもし 下さい 初めて 丁度 時々 段々 一番 大きな 小さな まっすぐ".split(" ");
+var NA="好き 嫌い 嫌 綺麗 静か 有名 便利 丈夫 大丈夫 大切 大変 上手 下手 元気 結構 大好き 同じ にぎやか りっぱ 暇 色々".split(" ");
+var VB="する できる かかる かける つける かぶる はく やる コピーする".split(" ");
+var NN="お手洗い 近く".split(" ");
+var ORD=["동사","い형용사","な형용사","명사","대명사","부사","연체사","감탄·접속사","접미사"],OM={};
+function addM(c,s){s.split(" ").forEach(function(k){OM[k]=c});}
+addM("대명사","ここ そこ あそこ どこ こちら そちら あちら どちら こっち そっち あっち どっち これ それ あれ どれ 誰 どなた 何 いつ いくつ いくら");
+addM("연체사","この その あの どの こんな 大きな 小さな 何～");
+addM("부사","すぐ すぐに ゆっくり ゆっくりと よく 少し ちょっと もっと 沢山 多分 全部 初めて 丁度 時々 段々 一番 まっすぐ どう なぜ そう いかが");
+addM("감탄·접속사","はい いいえ ええ さあ もしもし どうも どうぞ 下さい それでは では また");
+function posOf(w){var k=w[0],r=w[1];if(w[3]&&ORD.indexOf(w[3])>=0)return w[3];
+  var m=OM[k];if(m)return m;
+  if(k.charAt(0)==="～")return "접미사";
+  if(NA.indexOf(k)>=0)return "な형용사";
+  if(VB.indexOf(k)>=0)return "동사";
+  if(NN.indexOf(k)>=0)return "명사";
+  var last=k.charAt(k.length-1),kana=/[\u3041-\u3096]/.test(last),hasK=/[\u4e00-\u9fff]/.test(k);
+  if(kana&&last==="い"&&r.slice(-1)==="い")return "い형용사";
+  if(kana&&hasK&&/[うくぐすつぬぶむる]$/.test(last)&&!/^[一二三四五六七八九十]つ$/.test(k))return "동사";
+  return "명사";}
+function posC(p){return p==="동사"?"pv":p==="い형용사"?"pa":p==="な형용사"?"pb":p==="명사"?"pn":"po";}
+function setPos(w){var p=posOf(w),e=$("pos");e.textContent=p;e.className="pos "+posC(p);}
+var TABS=[],LV=null;
+function loadTabs(){try{TABS=JSON.parse(localStorage.getItem("vocTabs")||"[]");}catch(e){TABS=[];}}
+function saveTabs(){try{localStorage.setItem("vocTabs",JSON.stringify(TABS));return true;}catch(e){$("msg").textContent="저장 공간이 부족해서 저장하지 못했어요.";return false;}}
+function delTab(id){try{["k","h","p"].forEach(function(x){localStorage.removeItem(id+"_"+x)});}catch(e){}
+  TABS=TABS.filter(function(x){return x.id!==id});saveTabs();$("setp").hidden=true;switchLevel(TABS[0]?TABS[0].id:null);}
+function parseWords(t){var out=[];t.replace(/^\ufeff/,"").split(/\r?\n/).forEach(function(l){l=l.trim();if(!l||l.charAt(0)==="#")return;
+  var p=l.indexOf("|")>=0?l.split("|"):l.indexOf("\t")>=0?l.split("\t"):l.split(",");
+  p=p.map(function(x){return x.trim()});if(p.length<2||!p[0])return;
+  var w=p.length===2?[p[0],p[0],p[1]]:[p[0],p[1]||p[0],p[2]||""];
+  if(p[3]&&ORD.indexOf(p[3])>=0)w.push(p[3]);out.push(w);});return out;}
+function KEY(s){return LV+"_"+s;}
+function renderTabs(){var t=$("tabs");t.innerHTML="";
+  TABS.forEach(function(o){var d=document.createElement("div");d.className="tab"+(LV===o.id?" on":"");d.setAttribute("role","tab");
+    var nm=document.createElement("span");nm.textContent=LV===o.id?o.name:(o.name.length>4?o.name.slice(0,4)+"…":o.name);d.appendChild(nm);
+    if(LV===o.id){var x=document.createElement("span");x.textContent="×";x.setAttribute("aria-label","이 탭 삭제");x.style.cssText="margin-left:10px;padding:0 4px;font-size:16px;line-height:1";
+      x.onclick=function(e){e.stopPropagation();if(!x.dataset.c){x.dataset.c="1";x.textContent="삭제?";x.style.color="#c0392b";x.style.fontSize="13px";
+        setTimeout(function(){if(x.isConnected){x.dataset.c="";x.textContent="×";x.style.color="";x.style.fontSize="16px";}},3000);return;}delTab(o.id);};d.appendChild(x);}
+    d.onclick=function(){if(LV!==o.id)switchLevel(o.id);};t.appendChild(d);});
+  var a=document.createElement("div");a.className="tab";a.textContent="+ 파일 추가";a.onclick=function(){$("wfile").click();};t.appendChild(a);}
+function switchLevel(id){stop();LV=id;var tb=TABS.filter(function(x){return x.id===id})[0];W=tb?tb.words:[];
+  base=W.map(function(_,i){return i});known={};heardW={};playedW={};
+  if(LV){loadK();loadH();loadP();try{localStorage.setItem("vocActive",LV)}catch(e){}}
+  idx=0;sortMode="none";posSort=-1;scriptSort=0;heard=0;loadVoices();
+  $("num").max=Math.max(1,W.length);$("mx").textContent=W.length;
+  var l=$("list");l.innerHTML="";l.hidden=true;$("lbox").style.display="none";setIc($("lst"),"list","단어 목록");
+  renderTabs();rebuild();}
+var autoX=false,skipAdv=false,sayTok=0,heard=0,heardW={},playedW={},pvI=-1,korOn=true;
+function speakKo(t,cb){if(!korOn){cb();return;}speak(t,"ko-KR",cb);}
+var IC={play:'<path d="M7 4v16l13-8z"/>',pause:'<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+  vol:'<path d="M15 8a5 5 0 0 1 0 8"/><path d="M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15h-2a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2l3.5-4.5a.8.8 0 0 1 1.5.5v14a.8.8 0 0 1-1.5.5l-3.5-4.5"/>',
+  shuf:'<path d="M18 4l3 3l-3 3"/><path d="M18 20l3-3l-3-3"/><path d="M3 7h3a5 5 0 0 1 5 5a5 5 0 0 0 5 5h5"/><path d="M21 7h-5a4.98 4.98 0 0 0-3 1m-4 8a4.98 4.98 0 0 1-3 1h-3"/>',
+  list:'<path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M5 6v.01"/><path d="M5 12v.01"/><path d="M5 18v.01"/>',
+  x:'<path d="M18 6l-12 12"/><path d="M6 6l12 12"/>',top:'<path d="M12 10v10"/><path d="M12 10l4 4"/><path d="M12 10l-4 4"/><path d="M4 4h16"/>',bot:'<path d="M12 14v-10"/><path d="M12 14l4-4"/><path d="M12 14l-4-4"/><path d="M4 20h16"/>',prev:'<path d="M15 6l-6 6l6 6"/>',next:'<path d="M9 6l6 6l-6 6"/>'};
+function setIc(b,n,t){b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>'+(t?'<span>'+t+'</span>':'');}
+function saveP(){try{localStorage.setItem(KEY("p"),JSON.stringify(Object.keys(playedW)))}catch(e){}}
+function loadP(){try{var a=JSON.parse(localStorage.getItem(KEY("p"))||"[]");a.forEach(function(k){playedW[k]=1;});}catch(e){}}
+function markP(i){if(!playedW[i]){playedW[i]=1;saveP();}
+  var e=document.querySelector('#list .it[data-i="'+i+'"]');if(e)e.classList.add("pl");upd();}
+function saveH(){try{localStorage.setItem(KEY("h"),JSON.stringify(Object.keys(heardW)))}catch(e){}}
+function loadH(){try{var a=JSON.parse(localStorage.getItem(KEY("h"))||"[]");a.forEach(function(k){heardW[k]=1;});}catch(e){}}
+function resetBtn(fn,lb){lb=lb||"초기화";var r=document.createElement("button");r.textContent=lb;r.style.cssText="flex:none;padding:6px 12px;font-size:13px";
+  r.onclick=function(){if(!r.dataset.c){r.dataset.c="1";r.textContent="정말 초기화?";r.style.background="#c0392b";r.style.color="#fff";
+    setTimeout(function(){r.dataset.c="";r.textContent=lb;r.style.background="";r.style.color="";},3000);return;}fn();};return r;}
+function hrow(txt,fn,col){var d=document.createElement("div");d.style.cssText="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:4px 0";
+  var s=document.createElement("span");
+  if(col){var ic=document.createElement("b");ic.textContent="✓";ic.style.cssText="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:4px;background:"+col+";color:#fff;font-size:13px;margin-right:8px;vertical-align:middle";s.appendChild(ic);s.appendChild(document.createTextNode(txt));}else s.textContent=txt;
+  d.appendChild(s);d.appendChild(resetBtn(fn));return d;}
+function upd(){var h=$("kc");if(!h)return;h.style.cssText="display:block";h.textContent="";
+  h.appendChild(hrow("외운 단어 "+Object.keys(known).length+"개 · 초록 체크",function(){stop();Object.keys(known).forEach(function(k){delete known[k]});saveK();syncList();rebuild();upd();},"#27ae60"));
+  h.appendChild(hrow("들은 단어 "+Object.keys(heardW).length+"개 · 파랑 체크",function(){stop();heard=0;loadVoices();Object.keys(heardW).forEach(function(k){delete heardW[k]});saveH();syncList();rebuild();upd();},"#2a7de1"));
+  h.appendChild(hrow("들은 표시 "+Object.keys(playedW).length+"개 · 진한 초록 배경",function(){Object.keys(playedW).forEach(function(k){delete playedW[k]});saveP();syncList();upd();},"#166534"));}
+function syncList(){var l=$("list");if(!l.childNodes.length)return;var vis=!l.hidden;l.innerHTML="";if(vis){l.hidden=true;$("lst").onclick();}}
+var sortMode="none",posSort=-1,scriptSort=0;
+function hira(s){return s.replace(/[\u30a1-\u30f6]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-96)});}
+function ordIdx(){return ordScript(ordPos());}
+function ordScript(a){if(!scriptSort)return a;var ix={};a.forEach(function(v,j){ix[v]=j});
+  function k(i){var f=/[\u30a1-\u30fa]/.test(W[i][1])?1:0;return scriptSort===1?f:1-f;}
+  return a.sort(function(x,y){return k(x)-k(y)||ix[x]-ix[y];});}
+function ordPos(){var a=ordBase();if(posSort<0)return a;
+  var R={},ix={},N=ORD.length;ORD.forEach(function(p,i){R[p]=i});a.forEach(function(v,j){ix[v]=j});
+  return a.sort(function(x,y){return (R[posOf(W[x])]-posSort+N)%N-(R[posOf(W[y])]-posSort+N)%N||ix[x]-ix[y];});}
+function ordBase(){var a=base.slice();
+  if(sortMode==="none")return a;
+  a.sort(function(x,y){var r=hira(W[x][1]).localeCompare(hira(W[y][1]),"ja")||x-y;return sortMode==="asc"?r:-r;});
+  return a;}
+function sortBar(l){var b=document.createElement("div");b.className="it";
+  [["none","초기화"]].forEach(function(o){
+    var x=document.createElement("button");x.textContent=o[1];
+    x.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+"";
+    x.onclick=function(){stop();base=W.map(function(_,i){return i});idx=0;sortMode=o[0];posSort=-1;scriptSort=0;rebuild();l.innerHTML="";l.hidden=true;$("lst").onclick();};
+    b.appendChild(x);});
+  var g=document.createElement("button");g.textContent=sortMode==="asc"?"あ ▲":sortMode==="desc"?"わ ▼":"기본순";
+  g.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+(sortMode!=="none"?";background:#27ae60;color:#fff;border:none":"");
+  g.onclick=function(){sortMode=sortMode==="none"?"asc":sortMode==="asc"?"desc":"none";l.innerHTML="";l.hidden=true;$("lst").onclick();};
+  b.appendChild(g);
+  var y=document.createElement("button");y.textContent=(posSort<0?"품사순":"품사: "+ORD[posSort])+" ▾";
+  y.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+(posSort>=0?";background:#27ae60;color:#fff;border:none":"");
+  var pm=document.createElement("div");pm.style.cssText="display:none;position:absolute;z-index:30;min-width:160px;background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.3)";b.style.position="relative";
+  [""].concat(ORD).forEach(function(nm,k){var o=document.createElement("div");
+    o.textContent=k===0?"품사순 해제":(k-1===posSort?"✓ ":"")+nm;
+    o.style.cssText="padding:10px 12px;font-size:14px;border-bottom:1px solid var(--bd)"+(k>0&&k-1===posSort?";font-weight:700;color:#27ae60":"");
+    o.onclick=function(){posSort=k-1;l.innerHTML="";l.hidden=true;$("lst").onclick();};
+    pm.appendChild(o);});
+  y.onclick=function(){if(pm.style.display!=="none"){pm.style.display="none";return;}
+    pm.style.left=y.offsetLeft+"px";pm.style.top=(y.offsetTop+y.offsetHeight+4)+"px";pm.style.display="block";
+    var cl=function(e){if(!document.body.contains(pm)){document.removeEventListener("click",cl);return;}
+      if(e.target!==y&&!pm.contains(e.target)){pm.style.display="none";document.removeEventListener("click",cl);}};
+    setTimeout(function(){document.addEventListener("click",cl);},0);};
+  b.appendChild(y);
+  var z=document.createElement("button");z.textContent=scriptSort===0?"문자 구분":scriptSort===1?"히라가나":"가타카나";
+  z.style.cssText="flex:none;padding:8px 10px;font-size:14px;margin-right:6px"+(scriptSort>0?";background:#27ae60;color:#fff;border:none":"");
+  z.onclick=function(){scriptSort=(scriptSort+1)%3;l.innerHTML="";l.hidden=true;$("lst").onclick();};
+  b.appendChild(z);b.appendChild(pm);
+  l.appendChild(b);}
+$("num").max=W.length;$("mx").textContent=W.length;
+$("lst").onclick=function(){var l=$("list");
+  if(!l.hidden){l.hidden=true;$("lbox").style.display="none";setIc(this,"list","단어 목록");return;}
+  if(!l.childNodes.length){var h=document.createElement("div");h.className="it";h.id="kc";l.appendChild(h);upd();sortBar(l);var c=0;ordIdx().forEach(function(i){var w=W[i];var d=document.createElement("div");d.className="it";
+    var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!known[i];
+    cb.style.cssText="width:22px;height:22px;vertical-align:middle;margin-right:10px;accent-color:#27ae60";
+    cb.onchange=function(){stop();if(cb.checked)known[i]=1;else delete known[i];saveK();rebuild();upd();};
+    var sp=document.createElement("span");
+    sp.textContent=(++c)+". "+w[0]+(w[1]!==w[0]?" ("+w[1]+")":"")+" — "+w[2];
+    sp.onclick=function(){pv(i);window.scrollTo(0,0);};
+    var pb=document.createElement("span");var pt=posOf(w);pb.className="pos "+posC(pt);pb.textContent=pt;
+    var hb=document.createElement("input");hb.type="checkbox";hb.checked=!!heardW[i];hb.title="들은 단어";cb.title="외운 단어";
+    hb.style.cssText="width:22px;height:22px;vertical-align:middle;margin-right:10px;accent-color:#2a7de1";
+    hb.onchange=function(){stop();if(hb.checked)heardW[i]=1;else delete heardW[i];saveH();rebuild();upd();};
+    d.dataset.i=i;if(playedW[i])d.className="it pl";
+    d.appendChild(cb);d.appendChild(hb);d.appendChild(sp);d.appendChild(pb);l.appendChild(d);});}
+  l.hidden=false;$("lbox").style.display="flex";setIc(this,"x","목록 닫기");};
+$("num").onchange=function(){var v=parseInt(this.value,10);
+  if(isNaN(v))v=20;v=Math.max(1,Math.min(W.length,v));
+  this.value=v;lim=v;heard=0;loadVoices();idx=0;stop();rebuild();};
+setIc($("prev"),"prev","이전");setIc($("next"),"next","다음");setIc($("play"),"play","자동 재생");setIc($("say"),"vol");setIc($("shuf"),"shuf","섞기");setIc($("lst"),"list","단어 목록");
+try{korOn=localStorage.getItem("n5kor")!=="0";}catch(e){}
+$("kk").checked=korOn;$("kk").onchange=function(){korOn=this.checked;try{localStorage.setItem("n5kor",korOn?"1":"0")}catch(e){}};
+setIc($("lclose"),"x","목록 닫기");$("lclose").onclick=function(){$("lst").onclick();};
+setIc($("ltop"),"top","맨 위로");setIc($("lbot"),"bot","맨 아래로");
+$("ltop").onclick=function(){$("list").scrollIntoView({behavior:"smooth",block:"start"});};
+$("lbot").onclick=function(){var l=$("list");if(l.lastElementChild)l.lastElementChild.scrollIntoView({behavior:"smooth",block:"end"});};
+(function(){var g=$("gear"),p=$("setp");
+  g.onclick=function(e){e.stopPropagation();p.hidden=!p.hidden;};
+  $("setx").onclick=function(){p.hidden=true;};
+  document.addEventListener("click",function(e){if(!p.hidden&&!p.contains(e.target)&&!g.contains(e.target))p.hidden=true;});})();
+loadTabs();var _a="";try{_a=localStorage.getItem("vocActive")||"";}catch(e){}
+LV=TABS.some(function(x){return x.id===_a})?_a:(TABS[0]?TABS[0].id:null);
+var _t=TABS.filter(function(x){return x.id===LV})[0];W=_t?_t.words:[];base=W.map(function(_,i){return i});
+$("num").max=Math.max(1,W.length);$("mx").textContent=W.length;renderTabs();if(LV){loadK();loadH();loadP();}
+$("ck").onchange=function(){var c=this;
+  if(pvI>=0){var j=pvI;if(c.checked)known[j]=1;else delete known[j];saveK();
+    order=base.filter(function(x){return !known[x]&&!heardW[x]});n=Math.min(lim,order.length);if(idx>=n)idx=0;upd();syncList();return;}
+  if(!c.checked)return;var i=order[idx];if(i===undefined){c.checked=false;return;}
+  c.style.pointerEvents="none";
+  setTimeout(function(){known[i]=1;saveK();c.checked=false;c.style.pointerEvents="";
+    var was=auto;skipAdv=false;rebuild();upd();syncList();if(was&&n>0)loop();},600);};
+$("addf").onclick=function(){$("wfile").click();};
+$("wfile").onchange=function(){var f=this.files&&this.files[0];if(!f)return;var inp=this,rd=new FileReader();
+  rd.onload=function(){var words=parseWords(String(rd.result));
+    if(!words.length){$("msg").textContent="단어를 읽지 못했어요. 한 줄에 일본어|읽기|뜻 형식인지, UTF-8로 저장했는지 확인해 주세요.";return;}
+    var id="t"+Date.now();TABS.push({id:id,name:f.name.replace(/\.[^.]+$/,""),words:words});
+    if(!saveTabs()){TABS.pop();return;}$("setp").hidden=true;switchLevel(id);$("msg").textContent=words.length+"개 단어를 추가했어요.";};
+  rd.readAsText(f,"utf-8");inp.value="";};
+$("delt").onclick=function(){var b=this;if(!LV)return;
+  if(!b.dataset.c){b.dataset.c="1";b.textContent="정말 삭제?";b.style.background="#c0392b";b.style.color="#fff";
+    setTimeout(function(){b.dataset.c="";b.textContent="현재 탭 삭제";b.style.background="";b.style.color="";},3000);return;}
+  b.dataset.c="";b.textContent="현재 탭 삭제";b.style.background="";b.style.color="";
+  var id=LV;try{["k","h","p"].forEach(function(x){localStorage.removeItem(id+"_"+x)});}catch(e){}
+  TABS=TABS.filter(function(x){return x.id!==id});saveTabs();$("setp").hidden=true;switchLevel(TABS[0]?TABS[0].id:null);};
+try{autoX=localStorage.getItem("n5autox")==="1";}catch(e){}
+$("ax").checked=autoX;$("ax").onchange=function(){autoX=this.checked;heard=0;loadVoices();if(n)show();try{localStorage.setItem("n5autox",autoX?"1":"0")}catch(e){}};
+rebuild();
+</script>
+</body>
+</html>
